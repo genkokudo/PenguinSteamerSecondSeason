@@ -7,6 +7,9 @@ namespace PenguinSteamerSecondSeason
         static void Main(string[] args)
         {
             Console.WriteLine("Hello Work!");
+            Console.WriteLine("ハロワ行け！");
+
+            
         }
     }
 }

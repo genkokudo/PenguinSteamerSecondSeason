@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "PenguinSteamerSecondSeason": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DATABASE_PASSWORD": "password"
+      }
+    }
+  }
+}
