@@ -7,7 +7,7 @@ namespace PenguinSteamerSecondSeason.Models
     /// <summary>
     /// 登録日時、更新日時の自動設定を行うためのインタフェース
     /// </summary>
-    class IEntity
+    public interface IEntity
     {
         /// <summary>
         /// 登録者
