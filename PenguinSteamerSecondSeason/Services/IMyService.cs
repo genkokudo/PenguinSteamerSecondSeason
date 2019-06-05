@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,23 +27,15 @@ namespace PenguinSteamerSecondSeason.Services
     /// </summary>
     public class MyService : IMyService
     {
-        private readonly string _baseUrl;
-        private readonly string _token;
-
-        //private readonly ILogger<MyService> _logger;
-        //public MyService(ILoggerFactory loggerFactory, IConfigurationRoot config)
-        //{
-        //    var baseUrl = config["SomeConfigItem:BaseUrl"];
-        //    var token = config["SomeConfigItem:Token"];
-        //    _baseUrl = baseUrl;
-        //    _token = token;
-        //    _logger = loggerFactory.CreateLogger<MyService>();
-        //}
+        ILogger<MyService> Logger { get; }
+        public MyService(ILogger<MyService> logger)
+        {
+            // ここでインジェクションしたものをクラスフィールドに保持する
+            Logger = logger;
+        }
         public void MyServiceMethod()
         {
-            Console.WriteLine("aaaa");
-            //_logger.LogDebug(_baseUrl);
-            //_logger.LogDebug(_token);
+            Logger.LogTrace("aaaa");
         }
     }
 
