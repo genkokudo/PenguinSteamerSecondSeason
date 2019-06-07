@@ -22,6 +22,11 @@
     <PackageReference Include="NLog.Extensions.Logging" Version="1.5.0" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="2.2.0" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql.Design" Version="1.1.2" />
+    <PackageReference Include="StreamJsonRpc" Version="2.1.6-alpha" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Penguinium\Penguinium.csproj" />
   </ItemGroup>
 
   <ItemGroup>

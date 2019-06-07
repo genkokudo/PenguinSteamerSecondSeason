@@ -77,7 +77,7 @@ namespace PenguinSteamerSecondSeason
                     // ログ
                     services.AddLogging();
                     // テスト（シングルトンで追加する方法）
-                    services.AddSingleton<IMyService, MyService>();
+                    services.AddSingleton<IWebSocketService, WebSocketService>();
                     // テスト（呼び出すたびにインスタンス作成する方法）
                     //services.AddTransient<IMyService, MyService>();
                     // メインロジック
