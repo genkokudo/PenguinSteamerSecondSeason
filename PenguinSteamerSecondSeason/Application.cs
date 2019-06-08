@@ -37,17 +37,25 @@ namespace PenguinSteamerSecondSeason
 
             Logger.LogInformation("開始処理");
 
-            Logger.LogInformation("WebSocket接続を開始します");
-            
-            // 対象をサービスに登録していく
-            // TODO:対象はDBから読むがいい
-            var socka = WebSocketService.Add(EndPoint, BtcJpy);
-            //var sockb = WebSocketService.Add(EndPoint, FxBtcJpy);
-
-            // 登録した対象全て開始
-            var task = WebSocketService.StartAllAsync(); // await待機しない
+            // WebSocket全部繋ぐ
+            var task = InitializeWebSocketAsync(); // いつ終わってもいいのでawait待機しない
 
             return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// DBに登録したWebSocketに全部接続する
+        /// </summary>
+        private Task InitializeWebSocketAsync()
+        {
+            Logger.LogInformation("WebSocket接続を開始します");
+            // 対象をサービスに登録していく
+            // TODO:対象はDBから読むがいい
+            WebSocketService.Add(EndPoint, BtcJpy);
+            WebSocketService.Add(EndPoint, FxBtcJpy);
+
+            // 登録した対象全て開始
+            return WebSocketService.StartAllAsync();
         }
 
         public Task StopAsync(CancellationToken cancellationToken)

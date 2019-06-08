@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using System.Net.WebSockets;
 
-namespace Penguinium.Common
+namespace PenguinSteamerSecondSeason.Common
 {
     /// <summary>
     /// 1つのWebSocket
