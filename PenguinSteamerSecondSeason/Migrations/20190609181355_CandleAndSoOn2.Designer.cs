@@ -2,15 +2,17 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PenguinSteamerSecondSeason;
 
 namespace PenguinSteamerSecondSeason.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20190609181355_CandleAndSoOn2")]
+    partial class CandleAndSoOn2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -39,8 +41,6 @@ namespace PenguinSteamerSecondSeason.Migrations
 
                     b.Property<decimal>("Min");
 
-                    b.Property<int?>("TimeScaleId");
-
                     b.Property<string>("TimeStamp");
 
                     b.Property<string>("UpdatedBy")
@@ -53,8 +53,6 @@ namespace PenguinSteamerSecondSeason.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BoardId");
-
-                    b.HasIndex("TimeScaleId");
 
                     b.ToTable("Candles");
                 });
@@ -75,6 +73,8 @@ namespace PenguinSteamerSecondSeason.Migrations
 
                     b.Property<string>("DisplayName");
 
+                    b.Property<int?>("ExchangeId");
+
                     b.Property<bool>("IsDeleted");
 
                     b.Property<string>("Name");
@@ -90,6 +90,8 @@ namespace PenguinSteamerSecondSeason.Migrations
 
                     b.HasIndex("Currency2Id");
 
+                    b.HasIndex("ExchangeId");
+
                     b.ToTable("MBoards");
                 });
 
@@ -97,6 +99,19 @@ namespace PenguinSteamerSecondSeason.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
+
+                    b.Property<string>("DisplayName");
+
+                    b.Property<string>("Name");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MCurrency");
+                });
+
+            modelBuilder.Entity("PenguinSteamerSecondSeason.Models.MExchange", b =>
+                {
+                    b.Property<int>("Id");
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(255);
@@ -116,7 +131,7 @@ namespace PenguinSteamerSecondSeason.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MCurrencies");
+                    b.ToTable("MExchanges");
                 });
 
             modelBuilder.Entity("PenguinSteamerSecondSeason.Models.MTimeScale", b =>
@@ -132,6 +147,8 @@ namespace PenguinSteamerSecondSeason.Migrations
                     b.Property<string>("DisplayName");
 
                     b.Property<bool>("IsDeleted");
+
+                    b.Property<string>("Name");
 
                     b.Property<int>("SecondsValue");
 
@@ -150,10 +167,6 @@ namespace PenguinSteamerSecondSeason.Migrations
                     b.HasOne("PenguinSteamerSecondSeason.Models.MBoard", "Board")
                         .WithMany()
                         .HasForeignKey("BoardId");
-
-                    b.HasOne("PenguinSteamerSecondSeason.Models.MTimeScale", "TimeScale")
-                        .WithMany()
-                        .HasForeignKey("TimeScaleId");
                 });
 
             modelBuilder.Entity("PenguinSteamerSecondSeason.Models.MBoard", b =>
@@ -165,6 +178,10 @@ namespace PenguinSteamerSecondSeason.Migrations
                     b.HasOne("PenguinSteamerSecondSeason.Models.MCurrency", "Currency2")
                         .WithMany()
                         .HasForeignKey("Currency2Id");
+
+                    b.HasOne("PenguinSteamerSecondSeason.Models.MExchange", "Exchange")
+                        .WithMany()
+                        .HasForeignKey("ExchangeId");
                 });
 #pragma warning restore 612, 618
         }

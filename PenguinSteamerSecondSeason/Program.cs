@@ -76,10 +76,10 @@ namespace PenguinSteamerSecondSeason
                     // サービス処理のDI
                     // ログ
                     services.AddLogging();
-                    // テスト（シングルトンで追加する方法）
+                    // WebSocket管理（シングルトンで追加する方法）
                     services.AddSingleton<IWebSocketService, WebSocketService>();
-                    // テスト（呼び出すたびにインスタンス作成する方法）
-                    //services.AddTransient<IMyService, MyService>();
+                    // Ticker登録（インジェクションごとにインスタンス作成する方法）
+                    services.AddTransient<ITickerUpdateService, TickerUpdateService>();
                     // メインロジック
                     // IHostedServiceを実装すると、AddHostedServiceで指定することで動かせる。
                     services.AddHostedService<Application>();

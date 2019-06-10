@@ -2,15 +2,17 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PenguinSteamerSecondSeason;
 
 namespace PenguinSteamerSecondSeason.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20190610091441_Excange2")]
+    partial class Excange2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -69,13 +71,11 @@ namespace PenguinSteamerSecondSeason.Migrations
 
                     b.Property<DateTime?>("CreatedDate");
 
-                    b.Property<int?>("Currency1Id");
-
-                    b.Property<int?>("Currency2Id");
-
                     b.Property<string>("DisplayName");
 
                     b.Property<bool>("IsDeleted");
+
+                    b.Property<int?>("MCurrencyId");
 
                     b.Property<string>("Name");
 
@@ -86,16 +86,14 @@ namespace PenguinSteamerSecondSeason.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Currency1Id");
-
-                    b.HasIndex("Currency2Id");
+                    b.HasIndex("MCurrencyId");
 
                     b.ToTable("MBoards");
                 });
 
             modelBuilder.Entity("PenguinSteamerSecondSeason.Models.MCurrency", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("MCurrencyId")
                         .ValueGeneratedOnAdd();
 
                     b.Property<string>("CreatedBy")
@@ -114,7 +112,7 @@ namespace PenguinSteamerSecondSeason.Migrations
 
                     b.Property<DateTime?>("UpdatedDate");
 
-                    b.HasKey("Id");
+                    b.HasKey("MCurrencyId");
 
                     b.ToTable("MCurrencies");
                 });
@@ -158,13 +156,9 @@ namespace PenguinSteamerSecondSeason.Migrations
 
             modelBuilder.Entity("PenguinSteamerSecondSeason.Models.MBoard", b =>
                 {
-                    b.HasOne("PenguinSteamerSecondSeason.Models.MCurrency", "Currency1")
+                    b.HasOne("PenguinSteamerSecondSeason.Models.MCurrency", "MCurrency")
                         .WithMany()
-                        .HasForeignKey("Currency1Id");
-
-                    b.HasOne("PenguinSteamerSecondSeason.Models.MCurrency", "Currency2")
-                        .WithMany()
-                        .HasForeignKey("Currency2Id");
+                        .HasForeignKey("MCurrencyId");
                 });
 #pragma warning restore 612, 618
         }

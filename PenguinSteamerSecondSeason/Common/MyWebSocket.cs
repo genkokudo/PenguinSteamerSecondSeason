@@ -5,11 +5,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using System.Net.WebSockets;
+using PenguinSteamerSecondSeason.Models.RawData;
+using Newtonsoft.Json;
 
 namespace PenguinSteamerSecondSeason.Common
 {
     /// <summary>
     /// 1つのWebSocket
+    /// Ticker以外にも
     /// </summary>
     public class MyWebSocket
     {
@@ -33,6 +36,11 @@ namespace PenguinSteamerSecondSeason.Common
         /// 必要ならLoggerを設定
         /// </summary>
         private ILogger Logger { get; }
+
+        /// <summary>
+        /// メッセージを受信したときのイベント
+        /// </summary>
+        public event EventHandler GetMessage;
 
         /// <summary>
         /// 1つのWebSocket
@@ -76,6 +84,11 @@ namespace PenguinSteamerSecondSeason.Common
             } while (!isWebSocketConnected);
         }
 
+        /// <summary>
+        /// RPCに接続する
+        /// </summary>
+        /// <param name="ws">WebSocket</param>
+        /// <returns></returns>
         private async Task ConnectRpcAsync(ClientWebSocket ws)
         {
             Rpc = new JsonRpc(new WebSocketMessageHandler(ws));
@@ -94,8 +107,10 @@ namespace PenguinSteamerSecondSeason.Common
             {
                 // 受信したときの処理
                 var p = @params as dynamic;
-                // TODO:
-                Console.WriteLine($"{p.channel}: {p.message}");
+                // TODO:ここでは変換せず、stringのまま処理すること
+                // TODO:BFのTickerに登録する
+                var s = JsonConvert.DeserializeObject<LightningTicker>(p.message.ToString());
+                OnGetMessage(s);
             }));
 
             Rpc.StartListening();
@@ -107,6 +122,15 @@ namespace PenguinSteamerSecondSeason.Common
         {
             return $"EndPoint:{EndPoint} ChannelName:{ChannelName}";
         }
-    }
 
+        /// <summary>
+        /// メッセージを受信したときに呼び出すイベント
+        /// </summary>
+        /// <param name="e">message</param>
+        protected virtual void OnGetMessage(EventArgs e)
+        {
+            // nullじゃなければ呼び出す
+            GetMessage?.Invoke(this, e);
+        }
+    }
 }

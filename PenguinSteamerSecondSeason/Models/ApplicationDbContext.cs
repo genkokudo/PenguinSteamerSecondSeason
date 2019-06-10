@@ -10,9 +10,13 @@ using System.Threading.Tasks;
 namespace PenguinSteamerSecondSeason
 {
     // データモデルを追加したとき、このクラスも更新すること
-    class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : DbContext
     {
-        public DbSet<Test> Tests { get; set; }
+        public DbSet<MCurrency> MCurrencies { get; set; }
+        public DbSet<MBoard> MBoards { get; set; }
+        //public DbSet<MExchange> MExchanges { get; set; }
+        public DbSet<MTimeScale> MTimeScales { get; set; }
+        public DbSet<Candle> Candles { get; set; }
 
         /// <summary>
         /// 接続文字列などの設定はStartUpで作成したものをインジェクションする
@@ -35,7 +39,7 @@ namespace PenguinSteamerSecondSeason
         /// <param name="name">登録・更新者名</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public Task<int> SaveChangesAsync(string name, CancellationToken cancellationToken = default(CancellationToken))
+        public Task<int> SaveChangesAsync(string name, CancellationToken cancellationToken = default)
         {
             // 保存時に日時を設定する
             SetCreatedDateTime(name);

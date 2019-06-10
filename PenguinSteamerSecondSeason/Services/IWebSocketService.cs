@@ -36,10 +36,13 @@ namespace PenguinSteamerSecondSeason.Services
         {
             MyWebSockets = new List<MyWebSocket>();
             Logger = logger;
+
+            // TODO:対象はDBから読み込む（Applicationからは削除）
         }
 
         /// <summary>
         /// 扱うWebSocket追加
+        /// TODO:あとでprivateにする
         /// </summary>
         /// <param name="endPoint"></param>
         /// <param name="channelName"></param>
