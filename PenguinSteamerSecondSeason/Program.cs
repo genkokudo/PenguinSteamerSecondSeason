@@ -15,7 +15,7 @@ namespace PenguinSteamerSecondSeason
     class Program
     {
         #region Main
-        public static void Main(string[] args)
+        public static void Main(/* string[] args */)
         {
             // スタート！
             var logger = NLog.LogManager.GetCurrentClassLogger();
@@ -23,7 +23,7 @@ namespace PenguinSteamerSecondSeason
             try
             {
                 // ホストを作成して実行
-                var host = CreateWebHostBuilder(args).Build();
+                var host = CreateWebHostBuilder().Build();
 
                 host.Run();
             }
@@ -43,9 +43,8 @@ namespace PenguinSteamerSecondSeason
         /// マイグレーションのためにこのようなメソッドを作成する必要がある
         /// ホストを作成する
         /// </summary>
-        /// <param name="args"></param>
         /// <returns></returns>
-        private static IHostBuilder CreateWebHostBuilder(string[] args)
+        private static IHostBuilder CreateWebHostBuilder()
         {
             // 作成した設定を保持
             IConfiguration configuration = null;
@@ -77,11 +76,13 @@ namespace PenguinSteamerSecondSeason
                     // ログ
                     services.AddLogging();
                     // WebSocket管理（シングルトンで追加する方法）
-                    services.AddSingleton<IWebSocketService, WebSocketService>();
+                    //services.AddHostedService<IWebSocketService, WebSocketService>();
+                    services.AddSingleton<ITickerService, TickerService>();
                     // Ticker登録（インジェクションごとにインスタンス作成する方法）
-                    services.AddTransient<ITickerUpdateService, TickerUpdateService>();
+                    //services.AddTransient<ITickerService, TickerService>();
                     // メインロジック
                     // IHostedServiceを実装すると、AddHostedServiceで指定することで動かせる。
+                    services.AddHostedService<WebSocketService>();
                     services.AddHostedService<Application>();
                 })
                 .ConfigureLogging((context, config) =>

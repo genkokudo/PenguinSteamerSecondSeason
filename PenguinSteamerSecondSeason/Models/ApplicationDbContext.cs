@@ -16,6 +16,7 @@ namespace PenguinSteamerSecondSeason
         public DbSet<MBoard> MBoards { get; set; }
         //public DbSet<MExchange> MExchanges { get; set; }
         public DbSet<MTimeScale> MTimeScales { get; set; }
+        public DbSet<MWebSocket> MWebSockets { get; set; }
         public DbSet<Candle> Candles { get; set; }
 
         /// <summary>
@@ -32,6 +33,21 @@ namespace PenguinSteamerSecondSeason
         }
 
         #region 標準項目設定
+        /// <summary>
+        /// 登録・更新時に呼び出して
+        /// 標準項目（更新日時とか）の設定を行う
+        /// </summary>
+        /// <param name="name">登録・更新者名</param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public int SaveChanges(string name)
+        {
+            // 保存時に日時を設定する
+            SetCreatedDateTime(name);
+
+            return base.SaveChanges();
+        }
+
         /// <summary>
         /// 登録・更新時に呼び出して
         /// 標準項目（更新日時とか）の設定を行う

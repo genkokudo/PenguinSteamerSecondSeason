@@ -44,5 +44,10 @@ namespace PenguinSteamerSecondSeason
         /// </summary>
         public const string SystemName = "PenguinSteamer";
 
+        /// <summary>
+        /// MBoardの名前のプレフィクス：bitFlyer
+        /// </summary>
+        public const string BoardPrefixBitflyer = "BITFLYER";
+
     }
 }

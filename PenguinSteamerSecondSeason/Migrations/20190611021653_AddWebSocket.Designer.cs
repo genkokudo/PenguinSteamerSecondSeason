@@ -2,15 +2,17 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PenguinSteamerSecondSeason;
 
 namespace PenguinSteamerSecondSeason.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20190611021653_AddWebSocket")]
+    partial class AddWebSocket
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -161,11 +163,11 @@ namespace PenguinSteamerSecondSeason.Migrations
 
                     b.Property<DateTime?>("CreatedDate");
 
+                    b.Property<int>("Enabled");
+
                     b.Property<string>("EndPoint");
 
                     b.Property<bool>("IsDeleted");
-
-                    b.Property<bool>("IsEnabled");
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255);

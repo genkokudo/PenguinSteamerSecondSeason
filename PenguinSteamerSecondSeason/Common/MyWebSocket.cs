@@ -22,6 +22,7 @@ namespace PenguinSteamerSecondSeason.Common
         const int ReconnectSeconds = 20;
         /// <summary>
         /// メッセージ受信イベント名
+        /// DBに入れなきゃいかんのちゃう？
         /// </summary>
         const string ChannelMessage = "channelMessage";
         /// <summary>
@@ -107,10 +108,8 @@ namespace PenguinSteamerSecondSeason.Common
             {
                 // 受信したときの処理
                 var p = @params as dynamic;
-                // TODO:ここでは変換せず、stringのまま処理すること
-                // TODO:BFのTickerに登録する
-                var s = JsonConvert.DeserializeObject<LightningTicker>(p.message.ToString());
-                OnGetMessage(s);
+
+                OnGetMessage(p.message.ToString());
             }));
 
             Rpc.StartListening();
