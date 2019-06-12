@@ -122,8 +122,12 @@ namespace PenguinSteamerSecondSeason.Services
         private void InitializeWebSocket()
         {
             Logger.LogInformation("WebSocket接続を開始します");
+            // DBから作成する時間足を取得する、現在は全板共通、時間が短い順に取得
+            var timeScales = DbContext.MTimeScales.OrderBy(d => d.SecondsValue).ToList();
+
             // 対象をDBから取得して、サービスに登録していく
             var wss = DbContext.MWebSockets.Where(d => d.IsEnabled && !d.IsDeleted).ToList();
+
             foreach (var item in wss)
             {
                 // WebSocket作成・追加
@@ -131,7 +135,7 @@ namespace PenguinSteamerSecondSeason.Services
                 if(item.Category == 1)
                 {
                     // Tickerの場合、Ticker管理サービスに登録して外からアクセスできるようにする
-                    TickerService.AddWebSocket(ws, item.Board.Name);
+                    TickerService.AddWebSocket(ws, item.Board.Name, timeScales);
                 }
             }
         }

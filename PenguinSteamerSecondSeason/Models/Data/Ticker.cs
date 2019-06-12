@@ -22,10 +22,9 @@ namespace PenguinSteamerSecondSeason.Data
         /// Bitflyerからの変換
         /// </summary>
         /// <param name="lightningTicker"></param>
-        /// <param name="exchange"></param>
-        public Ticker(LightningTicker lightningTicker, Exchange exchange)
+        public Ticker(LightningTicker lightningTicker)
         {
-            Exchange = exchange;
+            //Exchange = exchange;
             Timestamp = lightningTicker.timestamp;
             TickId = lightningTicker.tick_id;
             BestBid = (decimal)lightningTicker.best_bid;
@@ -44,10 +43,10 @@ namespace PenguinSteamerSecondSeason.Data
         /// </summary>
         public int Id { get; set; }
 
-        /// <summary>
-        /// 取引所
-        /// </summary>
-        public Exchange Exchange { get; set; }
+        ///// <summary>
+        ///// 取引所
+        ///// </summary>
+        //public Exchange Exchange { get; set; }
         /// <summary>
         /// "2019-06-08T04:52:56.5062738Z"
         /// </summary>

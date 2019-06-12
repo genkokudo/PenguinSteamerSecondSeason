@@ -109,7 +109,8 @@ namespace PenguinSteamerSecondSeason.Common
                 // 受信したときの処理
                 var p = @params as dynamic;
 
-                OnGetMessage(p.message.ToString());
+                // 受信したメッセージ(json)をイベントに送る
+                OnGetMessage(new TextEventArgs(p.message.ToString()));
             }));
 
             Rpc.StartListening();
@@ -126,7 +127,7 @@ namespace PenguinSteamerSecondSeason.Common
         /// メッセージを受信したときに呼び出すイベント
         /// </summary>
         /// <param name="e">message</param>
-        protected virtual void OnGetMessage(EventArgs e)
+        protected virtual void OnGetMessage(TextEventArgs e)
         {
             // nullじゃなければ呼び出す
             GetMessage?.Invoke(this, e);

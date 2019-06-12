@@ -1,9 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using PenguinSteamerSecondSeason.Common;
 using PenguinSteamerSecondSeason.Data;
 using PenguinSteamerSecondSeason.Models;
+using PenguinSteamerSecondSeason.Models.RawData;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -18,7 +21,13 @@ namespace PenguinSteamerSecondSeason.Services
     /// </summary>
     public interface ITickerService
     {
-        void AddWebSocket(MyWebSocket myWebSocket, string boardName);
+        /// <summary>
+        /// Tickerを受信するWebSocketを追加する
+        /// </summary>
+        /// <param name="myWebSocket">Tickerを受信するWebSocket</param>
+        /// <param name="boardName">MBoardで設定した名前</param>
+        /// <param name="timeScales">時間足リスト</param>
+        void AddWebSocket(MyWebSocket myWebSocket, string boardName, List<MTimeScale> timeScales);
 
         /// <summary>
         /// 指定したキーのWebSocketを取得する
@@ -27,12 +36,11 @@ namespace PenguinSteamerSecondSeason.Services
         /// <returns></returns>
         MyWebSocket GetWebSocket(string boardName);
 
-        ///// <summary>
-        ///// 取り敢えず全Tickerの最新
-        ///// TODO:文字列じゃなくてTickerのリストで返すべき
-        ///// </summary>
-        ///// <returns></returns>
-        //string All();
+        /// <summary>
+        /// 全ての最新Tickerを取得する
+        /// </summary>
+        /// <returns></returns>
+        Dictionary<string, Ticker> GetAllTicker();
     }
 
     /// <summary>
@@ -43,17 +51,25 @@ namespace PenguinSteamerSecondSeason.Services
         /// <summary>
         /// ログ
         /// </summary>
-        ILogger<TickerService> Logger { get; }
+        private ILogger<TickerService> Logger { get; }
 
         /// <summary>
-        /// 全てのTicker
+        /// Tickerを取得するWebSocket全て
+        /// キーはMBoardsのName
         /// </summary>
-        Dictionary<string, MyWebSocket> WebSocket { get; }
+        private Dictionary<string, MyWebSocket> WebSockets { get; }
+
+        /// <summary>
+        /// 時間足ごとのローソクを作成・保持するオブジェクト
+        /// キーはMBoardsのName
+        /// MyWebSocketに持たせないのは、MyWebSocketはTicker専用でないため
+        /// </summary>
+        private Dictionary<string, CandleMaker> CandleMakers { get; }
 
         /// <summary>
         /// データベース
         /// </summary>
-        ApplicationDbContext DbContext { get; }
+        private ApplicationDbContext DbContext { get; }
 
         /// <summary>
         /// Ticker収集の管理を行う
@@ -63,7 +79,8 @@ namespace PenguinSteamerSecondSeason.Services
         {
             Logger = logger;
             DbContext = dbContext;
-            WebSocket = new Dictionary<string, MyWebSocket>();
+            WebSockets = new Dictionary<string, MyWebSocket>();
+            CandleMakers = new Dictionary<string, CandleMaker>();
             Logger.LogInformation("TickerService初期化完了");
         }
 
@@ -74,7 +91,7 @@ namespace PenguinSteamerSecondSeason.Services
         /// <returns></returns>
         public MyWebSocket GetWebSocket(string boardName)
         {
-            return WebSocket[boardName];
+            return WebSockets[boardName];
         }
 
         /// <summary>
@@ -82,25 +99,43 @@ namespace PenguinSteamerSecondSeason.Services
         /// </summary>
         /// <param name="myWebSocket">Tickerを受信するWebSocket</param>
         /// <param name="boardName">MBoardで設定した名前</param>
-        public void AddWebSocket(MyWebSocket myWebSocket, string boardName)
+        /// <param name="timeScales">時間足リスト、時間が短い順</param>
+        public void AddWebSocket(MyWebSocket myWebSocket, string boardName, List<MTimeScale> timeScales)
         {
-            // TODO:ローソク作成クラスを作成する
+            // ローソク作成クラスを作成する
+            var candleMaker = CandleMaker.MakeGeneration(DbContext, timeScales);
 
             // 受信時のイベント設定
             if (boardName.StartsWith(SystemConstants.BoardPrefixBitflyer))
             {
                 // BFの場合
-                // TODO:変換するクラスを指定する
-                //var s = JsonConvert.DeserializeObject<LightningTicker>(string);
+                myWebSocket.GetMessage += (obj, e) => {
+                    var textEvent = e as TextEventArgs;
+                    var ticker = JsonConvert.DeserializeObject<LightningTicker>(textEvent.Text);
+                    
+                    // tickerをこのWSに対応したローソク作成クラスの一番親に送る
+                    candleMaker.Update(new Ticker(ticker));
+                };
             }
-            WebSocket.Add(boardName, myWebSocket);
+
+            // リストに追加
+            CandleMakers.Add(boardName, candleMaker);
+            WebSockets.Add(boardName, myWebSocket);
         }
 
-        public Dictionary<string, MyWebSocket> GetAllTicker()
+        /// <summary>
+        /// 全ての最新Tickerを取得する
+        /// nullの場合もあるので注意
+        /// </summary>
+        /// <returns></returns>
+        public Dictionary<string, Ticker> GetAllTicker()
         {
-            // TODO:キーと最新Tickerの辞書を作って返すべき
-            // Dictionary<string, Ticker>
-            return WebSocket;
+            var result = new Dictionary<string, Ticker>();
+            foreach (var item in CandleMakers.Keys)
+            {
+                result.Add(item, CandleMakers[item].CurrentTicker);
+            }
+            return result;
         }
     }
 

@@ -37,7 +37,7 @@ namespace PenguinSteamerSecondSeason.Models
         /// <summary>
         /// 時刻
         /// </summary>
-        public string TimeStamp { get; set; }
+        public DateTime TimeStamp { get; set; }
 
         /// <summary>
         /// 最小値
@@ -67,22 +67,22 @@ namespace PenguinSteamerSecondSeason.Models
         /// <summary>
         /// ローソク足データ
         /// </summary>
-        public Candle(List<decimal> source)
+        public Candle()
         {
-            TimeStamp = source[0].ToString();
-            Begin = source[1];
-            Max = source[2];
-            Min = source[3];
-            End = source[4];
-            Volume = source[5];
+            TimeStamp = new DateTime();
+            Min = UNKNOWN;
+            Max = UNKNOWN;
+            Begin = UNKNOWN;
+            End = UNKNOWN;
+            Volume = UNKNOWN;
         }
 
         /// <summary>
         /// ローソク足データ
         /// </summary>
-        public Candle()
+        public Candle(DateTime dateTime)
         {
-            TimeStamp = "";
+            TimeStamp = dateTime;
             Min = UNKNOWN;
             Max = UNKNOWN;
             Begin = UNKNOWN;

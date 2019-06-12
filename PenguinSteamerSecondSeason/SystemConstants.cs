@@ -49,5 +49,11 @@ namespace PenguinSteamerSecondSeason
         /// </summary>
         public const string BoardPrefixBitflyer = "BITFLYER";
 
+        /// <summary>
+        /// 各ローソク作成時の最大本数
+        /// 取り敢えず固定値
+        /// </summary>
+        public const int MaxCandle = 200;
+
     }
 }

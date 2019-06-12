@@ -7,7 +7,7 @@ namespace PenguinSteamerSecondSeason.Common
     /// APIなどを呼び出さない単純な関数を集める
     /// 計算用関数など
     /// </summary>
-    public class NonApiUtility
+    public class Utility
     {
         #region ToRoundDown:指定した精度の数値に切り捨てします。
         /// ------------------------------------------------------------------------
@@ -40,7 +40,7 @@ namespace PenguinSteamerSecondSeason.Common
         {
             double dCoef = System.Math.Pow(10, iDigits);
             int coef = (int)dCoef;
-            coef = coef % 10;
+            coef %= 10;
 
             return coef;
         }
@@ -49,6 +49,7 @@ namespace PenguinSteamerSecondSeason.Common
         #region last:配列を逆からアクセスします
 
         // LastOrDefaultは該当要素がない場合nullや規定値を返却
+        // 基本的にテクニカルの計算で使用。通常はLINQのLastを使用すること。
 
         /// <summary>
         /// 配列を逆からアクセスします
@@ -180,7 +181,7 @@ namespace PenguinSteamerSecondSeason.Common
         /// <param name="refList">単純履歴</param>
         public static double CalcSigma(int length, List<double> refList, double average)
         {
-            var lastList = NonApiUtility.LastSubList(refList, length);
+            var lastList = Utility.LastSubList(refList, length);
 
             if (lastList.Count > 0 && length > 0)
             {
