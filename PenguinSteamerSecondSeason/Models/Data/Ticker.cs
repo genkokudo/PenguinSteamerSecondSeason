@@ -43,10 +43,6 @@ namespace PenguinSteamerSecondSeason.Data
         /// </summary>
         public int Id { get; set; }
 
-        ///// <summary>
-        ///// 取引所
-        ///// </summary>
-        //public Exchange Exchange { get; set; }
         /// <summary>
         /// "2019-06-08T04:52:56.5062738Z"
         /// </summary>

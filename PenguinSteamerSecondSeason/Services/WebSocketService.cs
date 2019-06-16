@@ -135,7 +135,7 @@ namespace PenguinSteamerSecondSeason.Services
                 if(item.Category == 1)
                 {
                     // Tickerの場合、Ticker管理サービスに登録して外からアクセスできるようにする
-                    TickerService.AddWebSocket(ws, item.Board.Name, timeScales);
+                    TickerService.AddWebSocket(ws, item.Board, timeScales);
                 }
             }
         }

@@ -55,5 +55,11 @@ namespace PenguinSteamerSecondSeason
         /// </summary>
         public const int MaxCandle = 200;
 
+        /// <summary>
+        /// 起動してからローソク初回保存時
+        /// 同じ板のデータを全削除
+        /// </summary>
+        public const bool IsFirstDeleteCandle = true;
+
     }
 }

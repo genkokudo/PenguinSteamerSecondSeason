@@ -14,9 +14,13 @@ namespace PenguinSteamerSecondSeason.Common
     /// 1分足が1番親になる
     /// 親が更新したら、子に更新が伝搬する
     /// 
-    /// 取引頻度が低い銘柄の為に最低何件か計算用を残す？
-    /// 登録間隔は検討する → 取り敢えず随時でいいと思う。
+    /// 登録間隔は検討する → 取り敢えず新しくローソクができたらでいいと思う。
     /// DBから消す方法は？ → 登録と同じでいいと思う。
+    /// 
+    /// 今の状態だとメモリにはローソクリストを持ってない。
+    /// テクニカル計算をするなら持たせるようにすべき。
+    /// 
+    /// 使い方：MakeGenerationでインスタンスを取得する
     /// </summary>
     public class CandleMaker
     {
@@ -48,15 +52,15 @@ namespace PenguinSteamerSecondSeason.Common
         /// </summary>
         public List<Candle> CandleList { get; }
 
-        /// <summary>
-        /// 何秒の足か
-        /// </summary>
-        public int Seconds { get; }
+        ///// <summary>
+        ///// 何秒の足か
+        ///// </summary>
+        //public int Seconds { get; }
 
         /// <summary>
-        /// 現在、前回のローソク作成完了から何秒経過したか
+        /// 時間足
         /// </summary>
-        public int CurrentSeconds { get; private set; }
+        public MTimeScale TimeScale { get; }
 
         /// <summary>
         /// 表示名
@@ -64,25 +68,28 @@ namespace PenguinSteamerSecondSeason.Common
         public string DisplayName { get; }
 
         /// <summary>
-        /// 外からは呼ばないこと
+        /// どの板か
+        /// </summary>
+        public MBoard Board { get; }
+
+        /// <summary>
+        /// 外からは呼ばない
         /// </summary>
         /// <param name="dbContext"></param>
-        /// <param name="seconds"></param>
+        /// <param name="timeScale"></param>
         /// <param name="displayName"></param>
-        public CandleMaker(ApplicationDbContext dbContext, int seconds, string displayName)
+        /// <param name="board">MBoard</param>
+        CandleMaker(ApplicationDbContext dbContext, MTimeScale timeScale, string displayName, MBoard board)
         {
             Children = new List<CandleMaker>();
             DbContext = dbContext;
             CandleList = new List<Candle>();
-            Seconds = seconds;
+            TimeScale = timeScale;
             DisplayName = displayName;
-
-            // TODO:最初のローソクを作成時、タイムスタンプを設定
-            // TODO:初回更新時に0時0分からの経過時間を秒数で割った余りを代入
-            // 初回は一応ローソクデータ全消ししよう（設定可）
-            CurrentSeconds = -1;
+            Board = board;
         }
 
+        #region MakeGeneration:親子関係を持ったインスタンス作成
         /// <summary>
         /// 親子関係を付けてCandleMakerインスタンスを作成する
         /// 親に約数が無い秒数の時間足は捨てられる
@@ -90,8 +97,9 @@ namespace PenguinSteamerSecondSeason.Common
         /// </summary>
         /// <param name="dbContext">DB接続</param>
         /// <param name="timeScales">時間足リスト、時間が短い順</param>
+        /// <param name="board">MBoard</param>
         /// <returns>親子関係付きCandleMakerインスタンス</returns>
-        public static CandleMaker MakeGeneration(ApplicationDbContext dbContext, List<MTimeScale> timeScales)
+        public static CandleMaker MakeGeneration(ApplicationDbContext dbContext, List<MTimeScale> timeScales, MBoard board)
         {
             // 一番親の要素
             CandleMaker result = null;
@@ -107,13 +115,13 @@ namespace PenguinSteamerSecondSeason.Common
                 timeScales.Remove(longest);
 
                 // インスタンス作成し、一旦親に設定する
-                result = new CandleMaker(dbContext, longest.SecondsValue, longest.DisplayName);
+                result = new CandleMaker(dbContext, longest, longest.DisplayName, board);
 
                 // 取り出したものが親か確認する
                 List<CandleMaker> delList = new List<CandleMaker>();
                 foreach (var item in children)
                 {
-                    if(item.Seconds % result.Seconds == 0)
+                    if(item.TimeScale.SecondsValue % result.TimeScale.SecondsValue == 0)
                     {
                         // 約数ならば親に設定、子ども候補から削除
                         result.Children.Add(item);
@@ -132,18 +140,82 @@ namespace PenguinSteamerSecondSeason.Common
             return result;
         }
 
+        #endregion
+
         /// <summary>
         /// 親専用
         /// Tickerでローソクを更新する
         /// </summary>
-        /// <param name="ticker"></param>
+        /// <param name="ticker">Ticker</param>
         public void Update(Ticker ticker)
         {
+            // 現在のTickerに設定
+            CurrentTicker = ticker;
 
-            //SystemConstants.MaxCandle;
-            if (true)   // 1分経過していたら更新、複数分更新していたらその数だけローソクを作成
+            if (CurrentCandle == null)
             {
-                //UpdateChildren();
+                // 起動してから初回の動作
+                if (SystemConstants.IsFirstDeleteCandle)
+                {
+                    // ここはInMemoryでテストしないのでnull判定
+                    if(DbContext != null)
+                    {
+                        // この板の全ローソクデータを削除
+                        var delList = DbContext.Candles.Where(d => d.Board.Id == Board.Id).ToList();
+                        DbContext.Candles.RemoveRange(delList);
+                        DbContext.SaveChanges();
+                    }
+                }
+
+                // 新しいローソクの準備
+                CurrentCandle = new Candle(Board, TimeScale, CurrentTicker);
+            }
+            else // 初回ではない場合
+            {
+                // ローソクを更新
+                var newCandle = CurrentCandle.UpdateByTicker(CurrentTicker);
+                if(newCandle != null)
+                {
+                    // 過ぎている場合
+                    if (DbContext != null)
+                    {
+                        // 現在のローソクでDB更新
+                        // TODO:複数本更新未対応
+                        DbContext.Candles.Add(CurrentCandle);
+
+                        // 最大データ数を超えていたら、古いデータを1件削除
+                        DeleteOldData();
+
+                        // 子要素を更新
+                        UpdateChildren(CurrentCandle);
+
+                        // 新しいローソクをセット
+                        CurrentCandle = newCandle;
+                        // TODO:複数更新するならここまでを関数化
+
+                        // 子要素も更新が終わったらコミット
+                        DbContext.SaveChanges(SystemConstants.SystemName);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 親子共通
+        /// 最大データ数を超えていたら古いデータを削除する
+        /// 1件だけ
+        /// </summary>
+        private void DeleteOldData()
+        {
+            var count = DbContext.Candles.Where(d => d.TimeScale.Id == TimeScale.Id && d.Board.Id == Board.Id).Count();
+            int delCount = count - SystemConstants.MaxCandle;
+            if (delCount > 0)
+            {
+                // 古いデータを削除
+                // ※遅いようだったらOrderByの使用をやめておく
+                DbContext.Candles.Remove(
+                    DbContext.Candles.OrderBy(d => d.Id).First(d => d.TimeScale.Id == TimeScale.Id && d.Board.Id == Board.Id)
+                    );
             }
         }
 
@@ -155,7 +227,7 @@ namespace PenguinSteamerSecondSeason.Common
         {
             foreach (var item in Children)
             {
-                item.UpdateByCandle(candle, Seconds);
+                item.UpdateByCandle(candle);
             }
         }
 
@@ -164,46 +236,40 @@ namespace PenguinSteamerSecondSeason.Common
         /// 親から送られてきたローソクで更新する
         /// </summary>
         /// <param name="candle">ローソクデータ</param>
-        /// <param name="seconds">親が何秒足か</param>
-        public void UpdateByCandle(Candle candle, int seconds)
+        public void UpdateByCandle(Candle candle)
         {
+            if (CurrentCandle == null)
+            {
+                // 初回
+                // 新しいローソクの準備
+                CurrentCandle = new Candle(Board, TimeScale, candle);
 
+                // 子要素を更新
+                UpdateChildren(candle);
+            }
+            else
+            {
+                // 2回目以降
+                var newCandle = CurrentCandle.UpdateByCandle(candle);
+                if(newCandle != null)
+                {
+                    // 現在のローソクでDB更新
+                    // TODO:複数本更新未対応
+                    DbContext.Candles.Add(CurrentCandle);
+
+                    // 子要素を更新
+                    UpdateChildren(candle);
+
+                    // ローソクを新しい物に差し替え
+                    CurrentCandle = newCandle;
+
+                    // 最大データ数を超えていたら、古いデータを削除
+                    DeleteOldData();
+                }
+            }
         }
 
-
-        ///// <summary>
-        ///// 現在保存用に溜まっているデータを保存する
-        ///// これローソクに移動した方が良い
-        ///// </summary>
-        ///// <returns></returns>
-        //private async Task SubmitDataAsync()
-        //{
-        //    while (true)
-        //    {
-        //        Logger.LogInformation($"Tickerデータ登録:");
-        //        foreach (var item in DataForSave)
-        //        {
-        //            // ローソクに集計
-        //            // 集計したものを削除
-        //        }
-        //        await Task.Delay(2000);
-        //        //await Task.Delay(SubmitMinutes * 1000 * 60);
-        //    }
-        //}
-
-        ///// <summary>
-        ///// 1つのTickerに関して、計算用にデータを溜める
-        ///// 一定時間ごとにDBに保存する
-        ///// </summary>
-        ///// <param name="logger"></param>
-        ///// <param name="submitMinutes"></param>
-        //public CandleMaker(ILogger logger, int submitMinutes)
-        //{
-        //    Logger = logger;
-        //    SubmitMinutes = submitMinutes;
-        //    DataForSave = new List<Ticker>();
-        //    DataForCalclation = new List<Ticker>();
-        //    MaxTimeScaleCount = 5;  // そんなにいらないと思う
-        //}
+        // TODO:複数ローソクの方法：ローソクを配列で返す
+        // 配列が返ってきたら、単にローソクを突っ込むだけで適切に処理する関数に、早い方から突っ込んでいけばよい
     }
 }

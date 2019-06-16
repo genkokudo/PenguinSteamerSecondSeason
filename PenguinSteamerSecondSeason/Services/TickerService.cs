@@ -16,6 +16,7 @@ namespace PenguinSteamerSecondSeason.Services
     // 各Tickerの最新の値を持っておく（というか、アクセスできるようにする）
     // メソッドで↑を一覧表示する
 
+    #region Interface
     /// <summary>
     /// Tickerデータを溜めておいて一定時間ごとに登録する仕組みの管理
     /// </summary>
@@ -25,9 +26,9 @@ namespace PenguinSteamerSecondSeason.Services
         /// Tickerを受信するWebSocketを追加する
         /// </summary>
         /// <param name="myWebSocket">Tickerを受信するWebSocket</param>
-        /// <param name="boardName">MBoardで設定した名前</param>
+        /// <param name="board">MBoard</param>
         /// <param name="timeScales">時間足リスト</param>
-        void AddWebSocket(MyWebSocket myWebSocket, string boardName, List<MTimeScale> timeScales);
+        void AddWebSocket(MyWebSocket myWebSocket, MBoard board, List<MTimeScale> timeScales);
 
         /// <summary>
         /// 指定したキーのWebSocketを取得する
@@ -42,6 +43,7 @@ namespace PenguinSteamerSecondSeason.Services
         /// <returns></returns>
         Dictionary<string, Ticker> GetAllTicker();
     }
+    #endregion
 
     /// <summary>
     /// 本体
@@ -98,15 +100,15 @@ namespace PenguinSteamerSecondSeason.Services
         /// Tickerを受信するWebSocketを追加する
         /// </summary>
         /// <param name="myWebSocket">Tickerを受信するWebSocket</param>
-        /// <param name="boardName">MBoardで設定した名前</param>
+        /// <param name="board">MBoard</param>
         /// <param name="timeScales">時間足リスト、時間が短い順</param>
-        public void AddWebSocket(MyWebSocket myWebSocket, string boardName, List<MTimeScale> timeScales)
+        public void AddWebSocket(MyWebSocket myWebSocket, MBoard board, List<MTimeScale> timeScales)
         {
             // ローソク作成クラスを作成する
-            var candleMaker = CandleMaker.MakeGeneration(DbContext, timeScales);
+            var candleMaker = CandleMaker.MakeGeneration(DbContext, timeScales, board);
 
             // 受信時のイベント設定
-            if (boardName.StartsWith(SystemConstants.BoardPrefixBitflyer))
+            if (board.Name.StartsWith(SystemConstants.BoardPrefixBitflyer))
             {
                 // BFの場合
                 myWebSocket.GetMessage += (obj, e) => {
@@ -119,8 +121,8 @@ namespace PenguinSteamerSecondSeason.Services
             }
 
             // リストに追加
-            CandleMakers.Add(boardName, candleMaker);
-            WebSockets.Add(boardName, myWebSocket);
+            CandleMakers.Add(board.Name, candleMaker);
+            WebSockets.Add(board.Name, myWebSocket);
         }
 
         /// <summary>
