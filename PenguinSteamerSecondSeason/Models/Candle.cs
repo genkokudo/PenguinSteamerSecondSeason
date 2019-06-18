@@ -13,13 +13,7 @@ namespace PenguinSteamerSecondSeason.Models
     /// </summary>
     public class Candle : IEntity
     {
-        // TODO:複数分飛んだ時の複数本作成が考慮されていない
-
         #region Fields
-        /// <summary>
-        /// 初期値
-        /// </summary>
-        public const int UNKNOWN = -1;
 
         /// <summary>
         /// 通し番号
@@ -85,7 +79,7 @@ namespace PenguinSteamerSecondSeason.Models
 
         /// <summary>
         /// ローソク足データ
-        /// 親ローソクメーカー用
+        /// 親ローソクメーカー新規用
         /// タイムスタンプは時間足の単位で切り捨てるが、1日以上は切り捨てないことに注意。
         /// </summary>
         /// <param name="board">板</param>
@@ -100,23 +94,43 @@ namespace PenguinSteamerSecondSeason.Models
             BeginTime = ticker.Timestamp;
             int TimeSeconds = ((BeginTime.Hour * 60 + BeginTime.Minute) * 60 + BeginTime.Second);
             BeginTime = BeginTime.AddSeconds(-(TimeSeconds % TimeScale.SecondsValue));
+            BeginTime.AddMilliseconds(-BeginTime.Millisecond);  // ミリ秒切り捨て
 
             // 終了時刻を求める
             EndTime = BeginTime.AddSeconds(TimeScale.SecondsValue);
 
-            Min = UNKNOWN;
-            Max = UNKNOWN;
-            Begin = UNKNOWN;
-            End = UNKNOWN;
-            Volume = UNKNOWN;
-
-            // Tickerによる更新を行う
-            UpdateByTicker(ticker);
+            Min = ticker.Ltp;
+            Max = ticker.Ltp;
+            Begin = ticker.Ltp;
+            End = ticker.Ltp;
+            Volume = ticker.Volume;
         }
 
         /// <summary>
         /// ローソク足データ
-        /// 子ローソクメーカー用
+        /// 親ローソクメーカー更新時の作成用
+        /// </summary>
+        /// <param name="board">板</param>
+        /// <param name="timeScale">時間足</param>
+        /// <param name="ticker">現在のTicker</param>
+        /// <param name="endTime">新しく作成するローソクの終了時刻</param>
+        private Candle(MBoard board, MTimeScale timeScale, Ticker ticker, DateTime endTime)
+        {
+            Board = board;
+            TimeScale = timeScale;
+            EndTime = endTime;
+            BeginTime = EndTime.AddSeconds(-TimeScale.SecondsValue);
+
+            Min = ticker.Ltp;
+            Max = ticker.Ltp;
+            Begin = ticker.Ltp;
+            End = ticker.Ltp;
+            Volume = ticker.Volume;
+        }
+
+        /// <summary>
+        /// ローソク足データ
+        /// 子ローソクメーカー新規用
         /// タイムスタンプは時間足の単位で切り捨てるが、1日以上は切り捨てないことに注意。
         /// </summary>
         /// <param name="board">板</param>
@@ -138,96 +152,106 @@ namespace PenguinSteamerSecondSeason.Models
             Begin = candle.Begin;
             End = candle.End;
             Volume = candle.Volume;
+        }
 
-            // Candleによる更新を行う
-            UpdateByCandle(candle);
+        /// <summary>
+        /// ローソク足データ
+        /// 子ローソクメーカー更新時の作成用
+        /// </summary>
+        /// <param name="board">板</param>
+        /// <param name="timeScale">時間足</param>
+        /// <param name="candle">親から送られてきたローソク</param>
+        /// <param name="endTime">新しく作成するローソクの終了時刻</param>
+        private Candle(MBoard board, MTimeScale timeScale, Candle candle, DateTime endTime)
+        {
+            Board = board;
+            TimeScale = timeScale;
+            EndTime = endTime;
+            BeginTime = EndTime.AddSeconds(-TimeScale.SecondsValue);
+
+            Min = candle.Min;
+            Max = candle.Max;
+            Begin = candle.Begin;
+            End = candle.End;
+            Volume = candle.Volume;
         }
         #endregion
 
         /// <summary>
         /// Tickerによってローソクを更新する
-        /// 使用するときは戻り値をnullチェックすること
+        /// 終了している場合は更新されない
         /// </summary>
         /// <param name="ticker">Ticker</param>
-        /// <returns>終了していれば新しいローソクを返す、そうでなければnull</returns>
-        public Candle UpdateByTicker(Ticker ticker)
+        /// <returns>終了している場合は新しいローソクが返される。時間が空いた場合は複数返すこともある</returns>
+        public List<Candle> UpdateByTicker(Ticker ticker)
         {
-            // 終了判定を行い、終了時間が過ぎていれば新しいローソクを作成して返す
-            if(ticker.Timestamp > EndTime)
-            {
-                return new Candle(Board, TimeScale, ticker);
-            }
+            var result = new List<Candle>();
 
-            // 終値
-            End = ticker.Ltp;
-            
-            // 始値（初回のみ）
-            if (Begin < 0)
+            // 終了判定を行い、終了時間が過ぎている間繰り返す
+            var CurrentEndTime = EndTime;
+            while (ticker.Timestamp > CurrentEndTime)
             {
-                Begin = ticker.Ltp;
+                // 新しいローソクを作成
+                CurrentEndTime = CurrentEndTime.AddSeconds(TimeScale.SecondsValue);
+                var newCandle = new Candle(Board, TimeScale, ticker, CurrentEndTime);
+                result.Add(newCandle);
             }
+            if (result.Count == 0)
+            {
+                // 終了していない場合は更新
+                // 終値
+                End = ticker.Ltp;
 
-            // 最小値
-            if (Min < 0)
-            {
-                // 初回
-                Min = ticker.Ltp;
-            }
-            else
-            {
+                // 最小値
                 Min = Math.Min(Min, ticker.Ltp);
+
+                // 最大値
+                Max = Math.Max(Max, ticker.Ltp);
+
+                // ボリューム
+                Volume = ticker.Volume;
             }
 
-            // 最大値
-            Max = Math.Max(Max, ticker.Ltp);
-
-            // ボリューム
-            Volume = ticker.Volume;
-
-            return null;
+            return result;
         }
 
         /// <summary>
         /// ローソクデータによってローソクを更新する
-        /// 使用するときは戻り値をnullチェックすること
+        /// 終了している場合は更新されない
         /// </summary>
         /// <param name="candle">親から送られてきたローソク</param>
-        /// <returns>終了していれば新しいローソクを返す、そうでなければnull</returns>
-        public Candle UpdateByCandle(Candle candle)
+        /// <returns>終了している場合は新しいローソクが返される。時間が空いた場合は複数返すこともある</returns>
+        public List<Candle> UpdateByCandle(Candle candle)
         {
-            // 終了判定を行い、終了時間が過ぎていれば新しいローソクを作成して返す
-            if (candle.BeginTime > EndTime)
-            {
-                return new Candle(Board, TimeScale, candle);
-            }
+            var result = new List<Candle>();
 
-            // 終値
-            End = candle.End;
-
-            // 始値（初回のみ）
-            if (Begin < 0)
+            // 終了判定を行い、終了時間が過ぎている間繰り返す
+            var CurrentEndTime = EndTime;
+            while (candle.BeginTime > CurrentEndTime)
             {
-                Begin = candle.Begin;
+                // 新しいローソクを作成
+                CurrentEndTime = CurrentEndTime.AddSeconds(TimeScale.SecondsValue);
+                var newCandle = new Candle(Board, TimeScale, candle, CurrentEndTime);
+                result.Add(newCandle);
             }
+            if (result.Count == 0)
+            {
+                // 終了していない場合は更新
 
-            // 最小値
-            if (Min < 0)
-            {
-                // 初回
-                Min = candle.Min;
-            }
-            else
-            {
+                // 終値
+                End = candle.End;
+
+                // 最小値
                 Min = Math.Min(Min, candle.Min);
+
+                // 最大値
+                Max = Math.Max(Max, candle.Max);
+
+                // ボリューム
+                Volume = candle.Volume;
             }
 
-            // 最大値
-            Max = Math.Max(Max, candle.Max);
-
-            // ボリューム
-            Volume = candle.Volume;
-
-            return null;
+            return result;
         }
 
         #region 共通項目

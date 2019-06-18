@@ -24,6 +24,7 @@ namespace PenguinSteamerSecondSeason.Common
     /// </summary>
     public class CandleMaker
     {
+        #region Fields
         /// <summary>
         /// データベース
         /// </summary>
@@ -42,7 +43,7 @@ namespace PenguinSteamerSecondSeason.Common
         public Ticker CurrentTicker { get; private set; }
 
         /// <summary>
-        /// 最新のローソク（作成途中）
+        /// 最新のローソク（作成途中のローソク）
         /// 完成したローソクはDBへ
         /// </summary>
         public Candle CurrentCandle { get; private set; }
@@ -51,11 +52,6 @@ namespace PenguinSteamerSecondSeason.Common
         /// 今まで作ったローソク
         /// </summary>
         public List<Candle> CandleList { get; }
-
-        ///// <summary>
-        ///// 何秒の足か
-        ///// </summary>
-        //public int Seconds { get; }
 
         /// <summary>
         /// 時間足
@@ -72,8 +68,11 @@ namespace PenguinSteamerSecondSeason.Common
         /// </summary>
         public MBoard Board { get; }
 
+        #endregion
+
+        #region コンストラクタ（外から呼ばない）
         /// <summary>
-        /// 外からは呼ばない
+        /// 子を作成するコンストラクタ
         /// </summary>
         /// <param name="dbContext"></param>
         /// <param name="timeScale"></param>
@@ -88,6 +87,7 @@ namespace PenguinSteamerSecondSeason.Common
             DisplayName = displayName;
             Board = board;
         }
+        #endregion
 
         #region MakeGeneration:親子関係を持ったインスタンス作成
         /// <summary>
@@ -101,6 +101,9 @@ namespace PenguinSteamerSecondSeason.Common
         /// <returns>親子関係付きCandleMakerインスタンス</returns>
         public static CandleMaker MakeGeneration(ApplicationDbContext dbContext, List<MTimeScale> timeScales, MBoard board)
         {
+            // 元のリストに影響を与えないよう、コピーして使用する
+            var execList = new List<MTimeScale>(timeScales);
+
             // 一番親の要素
             CandleMaker result = null;
 
@@ -108,11 +111,11 @@ namespace PenguinSteamerSecondSeason.Common
             List<CandleMaker> children = new List<CandleMaker>();
 
             // 要素が無くなるまで繰り返す
-            while(timeScales.Count > 0)
+            while(execList.Count > 0)
             {
                 // 最後から1つ取り出す
-                var longest = timeScales.Last();
-                timeScales.Remove(longest);
+                var longest = execList.Last();
+                execList.Remove(longest);
 
                 // インスタンス作成し、一旦親に設定する
                 result = new CandleMaker(dbContext, longest, longest.DisplayName, board);
@@ -173,29 +176,28 @@ namespace PenguinSteamerSecondSeason.Common
             else // 初回ではない場合
             {
                 // ローソクを更新
-                var newCandle = CurrentCandle.UpdateByTicker(CurrentTicker);
-                if(newCandle != null)
+                var newCandles = CurrentCandle.UpdateByTicker(CurrentTicker);
+
+                foreach (var item in newCandles)
                 {
-                    // 過ぎている場合
-                    if (DbContext != null)
-                    {
-                        // 現在のローソクでDB更新
-                        // TODO:複数本更新未対応
-                        DbContext.Candles.Add(CurrentCandle);
+                    // 新しいローソクがある場合
+                    // 現在のローソクでDB更新
+                    DbContext.Candles.Add(CurrentCandle);
 
-                        // 最大データ数を超えていたら、古いデータを1件削除
-                        DeleteOldData();
+                    // 子要素を新しいローソクで更新
+                    UpdateChildren(item);
 
-                        // 子要素を更新
-                        UpdateChildren(CurrentCandle);
+                    // 新しいローソクをセット
+                    CurrentCandle = item;
+                }
+                if (newCandles.Count > 0)
+                {
+                    // 更新があった場合
+                    // 最大データ数を超えていたら、古いデータを1件削除
+                    DeleteOldData();
 
-                        // 新しいローソクをセット
-                        CurrentCandle = newCandle;
-                        // TODO:複数更新するならここまでを関数化
-
-                        // 子要素も更新が終わったらコミット
-                        DbContext.SaveChanges(SystemConstants.SystemName);
-                    }
+                    // 子要素も更新が終わったらコミット
+                    DbContext.SaveChanges(SystemConstants.SystemName);
                 }
             }
         }
@@ -250,26 +252,27 @@ namespace PenguinSteamerSecondSeason.Common
             else
             {
                 // 2回目以降
-                var newCandle = CurrentCandle.UpdateByCandle(candle);
-                if(newCandle != null)
+                var newCandles = CurrentCandle.UpdateByCandle(candle);
+
+                foreach (var item in newCandles)
                 {
+                    // 新しいローソクがある場合
                     // 現在のローソクでDB更新
-                    // TODO:複数本更新未対応
                     DbContext.Candles.Add(CurrentCandle);
 
-                    // 子要素を更新
-                    UpdateChildren(candle);
+                    // 子要素を新しいローソクで更新
+                    UpdateChildren(item);
 
-                    // ローソクを新しい物に差し替え
-                    CurrentCandle = newCandle;
-
-                    // 最大データ数を超えていたら、古いデータを削除
+                    // 新しいローソクをセット
+                    CurrentCandle = item;
+                }
+                if (newCandles.Count > 0)
+                {
+                    // 更新があった場合
+                    // 最大データ数を超えていたら、古いデータを1件削除
                     DeleteOldData();
                 }
             }
         }
-
-        // TODO:複数ローソクの方法：ローソクを配列で返す
-        // 配列が返ってきたら、単にローソクを突っ込むだけで適切に処理する関数に、早い方から突っ込んでいけばよい
     }
 }
