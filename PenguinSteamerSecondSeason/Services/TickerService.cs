@@ -105,7 +105,7 @@ namespace PenguinSteamerSecondSeason.Services
         public void AddWebSocket(MyWebSocket myWebSocket, MBoard board, List<MTimeScale> timeScales)
         {
             // ローソク作成クラスを作成する
-            var candleMaker = CandleMaker.MakeGeneration(DbContext, timeScales, board);
+            var candleMaker = CandleMaker.MakeGeneration(Logger,　DbContext, timeScales, board);
 
             // 受信時のイベント設定
             if (board.Name.StartsWith(SystemConstants.BoardPrefixBitflyer))

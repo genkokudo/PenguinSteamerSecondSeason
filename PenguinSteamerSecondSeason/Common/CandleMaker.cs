@@ -1,4 +1,5 @@
-﻿using PenguinSteamerSecondSeason.Data;
+﻿using Microsoft.Extensions.Logging;
+using PenguinSteamerSecondSeason.Data;
 using PenguinSteamerSecondSeason.Models;
 using System;
 using System.Collections.Generic;
@@ -25,6 +26,11 @@ namespace PenguinSteamerSecondSeason.Common
     public class CandleMaker
     {
         #region Fields
+        /// <summary>
+        /// ログ
+        /// </summary>
+        private ILogger Logger { get; }
+
         /// <summary>
         /// データベース
         /// </summary>
@@ -99,7 +105,7 @@ namespace PenguinSteamerSecondSeason.Common
         /// <param name="timeScales">時間足リスト、時間が短い順</param>
         /// <param name="board">MBoard</param>
         /// <returns>親子関係付きCandleMakerインスタンス</returns>
-        public static CandleMaker MakeGeneration(ApplicationDbContext dbContext, List<MTimeScale> timeScales, MBoard board)
+        public static CandleMaker MakeGeneration(ILogger logger, ApplicationDbContext dbContext, List<MTimeScale> timeScales, MBoard board)
         {
             // 元のリストに影響を与えないよう、コピーして使用する
             var execList = new List<MTimeScale>(timeScales);

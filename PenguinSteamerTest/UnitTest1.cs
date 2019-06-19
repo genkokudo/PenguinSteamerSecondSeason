@@ -1,4 +1,7 @@
 using ChainingAssertion;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using NLog.Extensions.Logging;
 using PenguinSteamerSecondSeason;
 using PenguinSteamerSecondSeason.Common;
 using PenguinSteamerSecondSeason.Models;
@@ -14,6 +17,16 @@ namespace PenguinSteamerTest
 
     public class CandleMakerTest
     {
+        /// <summary>
+        /// ログ
+        /// </summary>
+        private readonly ILogger Logger;
+
+        /// <summary>
+        /// デバッグメッセージの出力
+        /// </summary>
+        private readonly ITestOutputHelper Output;
+
         #region 固定データ
         /// <summary>
         /// テストデータ
@@ -46,6 +59,7 @@ namespace PenguinSteamerTest
             };
         #endregion
 
+        #region テストデータ
         public static IEnumerable<object[]> CandleMakerTestDataProp
         {
             get
@@ -54,15 +68,20 @@ namespace PenguinSteamerTest
                 yield return new object[] { null, TimeScales, Boards[1] };
             }
         }
-
-        /// <summary>
-        /// デバッグメッセージの出力
-        /// </summary>
-        private readonly ITestOutputHelper Output;
+        #endregion
 
         public CandleMakerTest(ITestOutputHelper output)
         {
             Output = output;
+
+            // ロガー作成
+            var serviceProvider = new ServiceCollection()
+                .AddLogging()
+                .BuildServiceProvider();
+
+            var factory = serviceProvider.GetService<ILoggerFactory>().AddNLog();
+
+            Logger = factory.CreateLogger<CandleMakerTest>();
         }
 
         [Theory(DisplayName = "CandleMaker作成")]
@@ -71,7 +90,7 @@ namespace PenguinSteamerTest
         public void Test1(ApplicationDbContext dbContext, List<MTimeScale> timeScales, MBoard board)
         {
             // インスタンス作成
-            var data = CandleMaker.MakeGeneration(dbContext, timeScales, board);
+            var data = CandleMaker.MakeGeneration(Logger, dbContext, timeScales, board);
 
             // 名前の確認
             data.DisplayName.Is("1分");
@@ -84,6 +103,15 @@ namespace PenguinSteamerTest
             data.Children[0].Children[0].Children[0].Children[0].Children[0].Children[0].Children[0].Children[0].DisplayName.Is("1日");
         }
 
+        [Fact(DisplayName = "xUnitでNLogを使用する")]
+        [Trait("Category", "Logging")]
+        public void Hello()
+        {
+            Logger.LogTrace("World Trace");
+            Logger.LogDebug("World Debug");
+            Logger.LogWarning("World Warn");
+            Logger.LogError("★★World Error★★");
+        }
 
     }
 }
