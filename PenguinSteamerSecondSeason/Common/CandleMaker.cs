@@ -166,14 +166,10 @@ namespace PenguinSteamerSecondSeason.Common
                 // 起動してから初回の動作
                 if (SystemConstants.IsFirstDeleteCandle)
                 {
-                    // ここはInMemoryでテストしないのでnull判定
-                    if(DbContext != null)
-                    {
-                        // この板の全ローソクデータを削除
-                        var delList = DbContext.Candles.Where(d => d.Board.Id == Board.Id).ToList();
-                        DbContext.Candles.RemoveRange(delList);
-                        DbContext.SaveChanges();
-                    }
+                    // この板の全ローソクデータを削除
+                    var delList = DbContext.Candles.Where(d => d.Board.Id == Board.Id).ToList();
+                    DbContext.Candles.RemoveRange(delList);
+                    DbContext.SaveChanges();
                 }
 
                 // 新しいローソクの準備

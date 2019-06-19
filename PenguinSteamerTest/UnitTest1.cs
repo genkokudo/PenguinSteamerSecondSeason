@@ -1,4 +1,5 @@
 using ChainingAssertion;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
@@ -7,14 +8,12 @@ using PenguinSteamerSecondSeason.Common;
 using PenguinSteamerSecondSeason.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace PenguinSteamerTest
 {
-    // TODO: InMemory
-    // TODO: ログ
-
     public class CandleMakerTest
     {
         /// <summary>
@@ -49,6 +48,7 @@ namespace PenguinSteamerTest
         /// <summary>
         /// テストデータ
         /// 板
+        /// ※通貨設定してないので他のテストで使うとき注意
         /// </summary>
         private static readonly List<MBoard> Boards = new List<MBoard>
             {
@@ -57,6 +57,18 @@ namespace PenguinSteamerTest
                 new MBoard() { Id = 13, Name = "BITFLYER_ETH_BTC", DisplayName = "bitFlyer現物ETH" },
                 new MBoard() { Id = 14, Name = "BITFLYER_BCH_BTC", DisplayName = "bitFlyer現物BCH" }
             };
+
+        /// <summary>
+        /// テストデータ
+        /// 通貨
+        /// </summary>
+        private static readonly List<MCurrency> Currencies = new List<MCurrency>
+            {
+                new MCurrency() { Id = 1, Name = "JPY", DisplayName = "円" },
+                new MCurrency() { Id = 2, Name = "BTC", DisplayName = "BTC" },
+                new MCurrency() { Id = 3, Name = "ETH", DisplayName = "Ethereum" },
+                new MCurrency() { Id = 4, Name = "BCH", DisplayName = "Bitcoin Cash" }
+            };
         #endregion
 
         #region テストデータ
@@ -64,8 +76,8 @@ namespace PenguinSteamerTest
         {
             get
             {
-                yield return new object[] { null, TimeScales, Boards[0] };
-                yield return new object[] { null, TimeScales, Boards[1] };
+                yield return new object[] { TimeScales, Boards[0] };
+                yield return new object[] { TimeScales, Boards[1] };
             }
         }
         #endregion
@@ -86,11 +98,20 @@ namespace PenguinSteamerTest
 
         [Theory(DisplayName = "CandleMaker作成")]
         [MemberData(nameof(CandleMakerTestDataProp))]
-        [Trait("Category", "Construct")]
-        public void Test1(ApplicationDbContext dbContext, List<MTimeScale> timeScales, MBoard board)
+        [Trait("Category", "CandleMakerの作成")]
+        public void Test1(List<MTimeScale> timeScales, MBoard board)
         {
-            // インスタンス作成
-            var data = CandleMaker.MakeGeneration(Logger, dbContext, timeScales, board);
+            // InMemoryDBを使うオプションを作成
+            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseInMemoryDatabase(databaseName: "TestDatabase")
+                .Options;
+
+            CandleMaker data = null;
+            using (var dbContext = new ApplicationDbContext(options)) // InMemoryDBを使うオプション設定を渡す
+            {
+                // インスタンス作成
+                data = CandleMaker.MakeGeneration(Logger, dbContext, timeScales, board);
+            }
 
             // 名前の確認
             data.DisplayName.Is("1分");
@@ -103,9 +124,10 @@ namespace PenguinSteamerTest
             data.Children[0].Children[0].Children[0].Children[0].Children[0].Children[0].Children[0].Children[0].DisplayName.Is("1日");
         }
 
+        #region xUnitの基本機能
         [Fact(DisplayName = "xUnitでNLogを使用する")]
-        [Trait("Category", "Logging")]
-        public void Hello()
+        [Trait("Category", "xUnitの基本機能")]
+        public void HelloLogger()
         {
             Logger.LogTrace("World Trace");
             Logger.LogDebug("World Debug");
@@ -113,6 +135,38 @@ namespace PenguinSteamerTest
             Logger.LogError("★★World Error★★");
         }
 
+        [Fact(DisplayName = "初めてのInMemoryDatabase")]
+        [Trait("Category", "xUnitの基本機能")]
+        public void AddDatabase()
+        {
+            // InMemoryDBを使うオプションを作成
+            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseInMemoryDatabase(databaseName: "TestDatabase")
+                .Options;
+
+            // 何かデータを追加。using ステートメントで一度 DB との接続を切る。
+            using (var context = new ApplicationDbContext(options)) // InMemoryDBを使うオプション設定を渡す
+            {
+                foreach (var item in Currencies)
+                {
+                    context.MCurrencies.Add(item);
+                }
+
+                context.SaveChanges(SystemConstants.SystemName);
+            }
+            // 切断
+
+            // 再接続してInMemoryDBから値を取り出す
+            using (var context = new ApplicationDbContext(options))
+            {
+                Assert.Equal(4, context.MCurrencies.Count());
+                var currencie = context.MCurrencies.First(e => e.Id == 1);
+                Assert.Equal("JPY", currencie.Name);
+                Assert.Equal(SystemConstants.SystemName, currencie.CreatedBy);
+                Assert.Equal(SystemConstants.SystemName, currencie.UpdatedBy);
+            }
+        }
+        #endregion
     }
 }
 
