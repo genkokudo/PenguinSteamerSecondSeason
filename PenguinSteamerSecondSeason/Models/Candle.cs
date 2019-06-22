@@ -106,27 +106,27 @@ namespace PenguinSteamerSecondSeason.Models
             Volume = ticker.Volume;
         }
 
-        /// <summary>
-        /// ローソク足データ
-        /// 親ローソクメーカー更新時の作成用
-        /// </summary>
-        /// <param name="board">板</param>
-        /// <param name="timeScale">時間足</param>
-        /// <param name="ticker">現在のTicker</param>
-        /// <param name="endTime">新しく作成するローソクの終了時刻</param>
-        private Candle(MBoard board, MTimeScale timeScale, Ticker ticker, DateTime endTime)
-        {
-            Board = board;
-            TimeScale = timeScale;
-            EndTime = endTime;
-            BeginTime = EndTime.AddSeconds(-TimeScale.SecondsValue);
+        ///// <summary>
+        ///// ローソク足データ
+        ///// 親ローソクメーカー更新時の作成用
+        ///// </summary>
+        ///// <param name="board">板</param>
+        ///// <param name="timeScale">時間足</param>
+        ///// <param name="ticker">現在のTicker</param>
+        ///// <param name="endTime">新しく作成するローソクの終了時刻</param>
+        //private Candle(MBoard board, MTimeScale timeScale, Ticker ticker, DateTime endTime)
+        //{
+        //    Board = board;
+        //    TimeScale = timeScale;
+        //    EndTime = endTime;
+        //    BeginTime = EndTime.AddSeconds(-TimeScale.SecondsValue);
 
-            Min = ticker.Ltp;
-            Max = ticker.Ltp;
-            Begin = ticker.Ltp;
-            End = ticker.Ltp;
-            Volume = ticker.Volume;
-        }
+        //    Min = ticker.Ltp;
+        //    Max = ticker.Ltp;
+        //    Begin = ticker.Ltp;
+        //    End = ticker.Ltp;
+        //    Volume = ticker.Volume;
+        //}
 
         /// <summary>
         /// ローソク足データ
@@ -141,21 +141,31 @@ namespace PenguinSteamerSecondSeason.Models
             Board = board;
             TimeScale = timeScale;
 
-            // 開始時刻
+            // 開始時刻は、この時間足で切り捨てる
             BeginTime = candle.BeginTime;
+            int TimeSeconds = ((BeginTime.Hour * 60 + BeginTime.Minute) * 60 + BeginTime.Second);
+            BeginTime = BeginTime.AddSeconds(-(TimeSeconds % TimeScale.SecondsValue));
+            BeginTime.AddMilliseconds(-BeginTime.Millisecond);  // ミリ秒切り捨て
 
             // 終了時刻を求める
             EndTime = BeginTime.AddSeconds(TimeScale.SecondsValue);
 
-            Min = candle.Min;
-            Max = candle.Max;
-            Begin = candle.Begin;
+            Min = candle.End;
+            Max = candle.End;
+            Begin = candle.End;
             End = candle.End;
             Volume = candle.Volume;
+
+            //Min = candle.Min;
+            //Max = candle.Max;
+            //Begin = candle.Begin;
+            //End = candle.End;
+            //Volume = candle.Volume;
         }
 
         /// <summary>
         /// ローソク足データ
+        /// 親ローソクメーカー更新時の作成
         /// 子ローソクメーカー更新時の作成用
         /// </summary>
         /// <param name="board">板</param>
@@ -169,9 +179,9 @@ namespace PenguinSteamerSecondSeason.Models
             EndTime = endTime;
             BeginTime = EndTime.AddSeconds(-TimeScale.SecondsValue);
 
-            Min = candle.Min;
-            Max = candle.Max;
-            Begin = candle.Begin;
+            Min = candle.End;
+            Max = candle.End;
+            Begin = candle.End;
             End = candle.End;
             Volume = candle.Volume;
         }
@@ -189,11 +199,20 @@ namespace PenguinSteamerSecondSeason.Models
 
             // 終了判定を行い、終了時間が過ぎている間繰り返す
             var CurrentEndTime = EndTime;
-            while (ticker.Timestamp > CurrentEndTime)
+            while (ticker.Timestamp >= CurrentEndTime)
             {
                 // 新しいローソクを作成
                 CurrentEndTime = CurrentEndTime.AddSeconds(TimeScale.SecondsValue);
-                var newCandle = new Candle(Board, TimeScale, ticker, CurrentEndTime);
+                var newCandle = new Candle(Board, TimeScale, this, CurrentEndTime);   // TODO:前のローソクの値を引き継がなければならないのに、最新のTickerの値を使ってしまっている。
+                if(newCandle.EndTime > ticker.Timestamp)
+                {
+                    // 新しいローソクの範囲内にTickerがあるときは、tickerの値をローソクに反映
+                    newCandle.Begin = ticker.Ltp;
+                    newCandle.End = ticker.Ltp;
+                    newCandle.Min = ticker.Ltp;
+                    newCandle.Max = ticker.Ltp;
+                    newCandle.Volume = ticker.Volume;
+                }
                 result.Add(newCandle);
             }
             if (result.Count == 0)
@@ -227,11 +246,25 @@ namespace PenguinSteamerSecondSeason.Models
 
             // 終了判定を行い、終了時間が過ぎている間繰り返す
             var CurrentEndTime = EndTime;
-            while (candle.BeginTime > CurrentEndTime)
+            while (candle.BeginTime >= CurrentEndTime)
             {
                 // 新しいローソクを作成
+                //CurrentEndTime = CurrentEndTime.AddSeconds(TimeScale.SecondsValue);
+                //var newCandle = new Candle(Board, TimeScale, candle, CurrentEndTime);
+                //result.Add(newCandle);
+
+
                 CurrentEndTime = CurrentEndTime.AddSeconds(TimeScale.SecondsValue);
-                var newCandle = new Candle(Board, TimeScale, candle, CurrentEndTime);
+                var newCandle = new Candle(Board, TimeScale, this, CurrentEndTime);   // TODO:前のローソクの値を引き継がなければならないのに、最新のTickerの値を使ってしまっている。
+                if (newCandle.EndTime > candle.BeginTime)
+                {
+                    // candleの開始時間が新しいローソクの範囲内ならば、最新の値（終値）をローソクに反映
+                    newCandle.Begin = candle.End;
+                    newCandle.End = candle.End;
+                    newCandle.Min = candle.End;
+                    newCandle.Max = candle.End;
+                    newCandle.Volume = candle.Volume;
+                }
                 result.Add(newCandle);
             }
             if (result.Count == 0)

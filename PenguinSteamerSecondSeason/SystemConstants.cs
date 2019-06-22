@@ -53,7 +53,7 @@ namespace PenguinSteamerSecondSeason
         /// 各ローソク作成時の最大本数
         /// 取り敢えず固定値
         /// </summary>
-        public const int MaxCandle = 200;
+        public const int MaxCandle = 100;
 
         /// <summary>
         /// 起動してからローソク初回保存時

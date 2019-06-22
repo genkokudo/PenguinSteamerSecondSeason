@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
 using PenguinSteamerSecondSeason;
 using PenguinSteamerSecondSeason.Common;
+using PenguinSteamerSecondSeason.Data;
 using PenguinSteamerSecondSeason.Models;
 using System;
 using System.Collections.Generic;
@@ -71,7 +72,148 @@ namespace PenguinSteamerTest
             };
         #endregion
 
+        #region トランザクションテストデータ
+
+        /// <summary>
+        /// 1分足用Tickerテスト用データ
+        /// </summary>
+        private static readonly List<Ticker> Tickers1m = new List<Ticker>
+            {
+                // Tickerを入力していく
+                // 最初のTickerが入力されたら、ローソクが作成される
+                // 1分足なので、開始と終了時間は1分ごとに切り捨て
+                new Ticker() { Id = 1,
+                    BestAsk = 801000, BestAskSize = 0.01M, TotalAskDepth = 5000,
+                    BestBid = 800000, BestBidSize = 0.01M, TotalBidDepth = 5000,
+                    Ltp = 800000,
+                    TickId = 100,
+                    Timestamp = DateTime.Parse("08/18/2018 07:22:16"),
+                    Volume = 120000, VolumeByProduct = 120000
+                },
+                new Ticker() { Id = 2,
+                    BestAsk = 802000, BestAskSize = 0.01M, TotalAskDepth = 5000,
+                    BestBid = 800000, BestBidSize = 0.01M, TotalBidDepth = 5000,
+                    Ltp = 802000,
+                    TickId = 100,
+                    Timestamp = DateTime.Parse("08/18/2018 07:22:18"),
+                    Volume = 120000, VolumeByProduct = 120000
+                },
+                // 1分経過していない場合、ローソクリストに加えない（境界値テスト）
+                new Ticker() { Id = 3,
+                    BestAsk = 802000, BestAskSize = 0.01M, TotalAskDepth = 5000,
+                    BestBid = 799000, BestBidSize = 0.01M, TotalBidDepth = 5000,
+                    Ltp = 799000,
+                    TickId = 100,
+                    Timestamp = DateTime.Parse("08/18/2018 07:22:59"),
+                    Volume = 120000, VolumeByProduct = 120000
+                },
+                // 1分経過したらローソクリストに加える
+                // 1分経過した後のTicker価格はローソクリストのローソクに影響しない
+                // 1分経過した後のTicker価格は新しいローソクに反映する
+                // 1分経過したらローソクをDBに登録する
+                new Ticker() { Id = 4,
+                    BestAsk = 803000, BestAskSize = 0.01M, TotalAskDepth = 5000,
+                    BestBid = 799000, BestBidSize = 0.01M, TotalBidDepth = 5000,
+                    Ltp = 803000,
+                    TickId = 100,
+                    Timestamp = DateTime.Parse("08/18/2018 07:23:00"),
+                    Volume = 120000, VolumeByProduct = 120000
+                },
+                // 5分経過したらローソク5本になっており、DBに全て登録されている
+                // 間のローソクはMin = Maxになっている
+                new Ticker() { Id = 5,
+                    BestAsk = 805000, BestAskSize = 0.01M, TotalAskDepth = 5000,
+                    BestBid = 799000, BestBidSize = 0.01M, TotalBidDepth = 5000,
+                    Ltp = 805000,
+                    TickId = 100,
+                    Timestamp = DateTime.Parse("08/18/2018 07:27:00"),
+                    Volume = 120000, VolumeByProduct = 120000
+                },
+                // 101分経過したらメモリの最初のローソクを削除する
+                new Ticker() { Id = 6,
+                    BestAsk = 806000, BestAskSize = 0.01M, TotalAskDepth = 5000,
+                    BestBid = 799000, BestBidSize = 0.01M, TotalBidDepth = 5000,
+                    Ltp = 806000,
+                    TickId = 100,
+                    Timestamp = DateTime.Parse("08/18/2018 09:03:00"),
+                    Volume = 120000, VolumeByProduct = 120000
+                }
+            };
+
+        /// <summary>
+        /// 5分足用Tickerテスト用データ
+        /// </summary>
+        private static readonly List<Ticker> Tickers5m = new List<Ticker>
+            {
+                // 親にTickerを入力していく
+                // 最初のTickerが入力されたら、ローソクが作成される
+                // 5分足なので、開始と終了時間は5分ごとに切り捨て
+                new Ticker() { Id = 1,
+                    BestAsk = 801000, BestAskSize = 0.01M, TotalAskDepth = 5000,
+                    BestBid = 800000, BestBidSize = 0.01M, TotalBidDepth = 5000,
+                    Ltp = 800000,
+                    TickId = 100,
+                    Timestamp = DateTime.Parse("08/18/2018 07:22:16"),
+                    Volume = 120000, VolumeByProduct = 120000
+                },
+                // 1分経過したらローソクが更新される
+                new Ticker() { Id = 2,
+                    BestAsk = 802000, BestAskSize = 0.01M, TotalAskDepth = 5000,
+                    BestBid = 800000, BestBidSize = 0.01M, TotalBidDepth = 5000,
+                    Ltp = 802000,
+                    TickId = 100,
+                    Timestamp = DateTime.Parse("08/18/2018 07:23:00"),
+                    Volume = 120000, VolumeByProduct = 120000
+                },
+                // 5分経過していない場合、ローソクリストに加えない（境界値テスト）
+                new Ticker() { Id = 3,
+                    BestAsk = 802000, BestAskSize = 0.01M, TotalAskDepth = 5000,
+                    BestBid = 799000, BestBidSize = 0.01M, TotalBidDepth = 5000,
+                    Ltp = 799000,
+                    TickId = 100,
+                    Timestamp = DateTime.Parse("08/18/2018 07:24:59"),
+                    Volume = 120000, VolumeByProduct = 120000
+                },
+                // 5分経過したらローソクリストに加える
+                // 5分経過した後のTicker価格はローソクリストのローソクに影響しない
+                // 5分経過した後のTicker価格は新しいローソクに反映する
+                // 5分経過したらローソクをDBに登録する
+                new Ticker() { Id = 4,
+                    BestAsk = 803000, BestAskSize = 0.01M, TotalAskDepth = 5000,
+                    BestBid = 799000, BestBidSize = 0.01M, TotalBidDepth = 5000,
+                    Ltp = 803000,
+                    TickId = 100,
+                    Timestamp = DateTime.Parse("08/18/2018 07:25:00"),
+                    Volume = 120000, VolumeByProduct = 120000
+                },
+                // 15分経過したらローソク3本になっており、DBに全て登録されている
+                // 間のローソクはMin = Maxになっている
+                new Ticker() { Id = 5,
+                    BestAsk = 805000, BestAskSize = 0.01M, TotalAskDepth = 5000,
+                    BestBid = 799000, BestBidSize = 0.01M, TotalBidDepth = 5000,
+                    Ltp = 805000,
+                    TickId = 100,
+                    Timestamp = DateTime.Parse("08/18/2018 07:35:00"),
+                    Volume = 120000, VolumeByProduct = 120000
+                },
+                // 505分経過したらDBの最初のローソクを削除する
+                new Ticker() { Id = 6,
+                    BestAsk = 806000, BestAskSize = 0.01M, TotalAskDepth = 5000,
+                    BestBid = 799000, BestBidSize = 0.01M, TotalBidDepth = 5000,
+                    Ltp = 806000,
+                    TickId = 100,
+                    Timestamp = DateTime.Parse("08/18/2018 15:45:00"),
+                    Volume = 120000, VolumeByProduct = 120000
+                }
+            };
+
+        #endregion
+
         #region テストデータ
+        /// <summary>
+        /// CandleMaker生成のテストデータ
+        /// ※Theoryの理解用に作成した、本当はFactの方が適切
+        /// </summary>
         public static IEnumerable<object[]> CandleMakerTestDataProp
         {
             get
@@ -80,8 +222,13 @@ namespace PenguinSteamerTest
                 yield return new object[] { TimeScales, Boards[1] };
             }
         }
+
         #endregion
 
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="output"></param>
         public CandleMakerTest(ITestOutputHelper output)
         {
             Output = output;
@@ -103,7 +250,7 @@ namespace PenguinSteamerTest
         {
             // InMemoryDBを使うオプションを作成
             var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(databaseName: "TestDatabase")
+                .UseInMemoryDatabase(databaseName: "Test1")
                 .Options;
 
             CandleMaker data = null;
@@ -114,14 +261,175 @@ namespace PenguinSteamerTest
             }
 
             // 名前の確認
-            data.DisplayName.Is("1分");
+            data.TimeScale.DisplayName.Is("1分");
 
-            // この時間足データの場合、一番親の子が2つあること
+            // この時間足データの場合、一番親の子（2代目）が2つあること
             data.Children.Count.Is(2);
 
             // 約数があって一番大きい秒数の子が親から辿れること
             // 表示名が正しく設定されていること
-            data.Children[0].Children[0].Children[0].Children[0].Children[0].Children[0].Children[0].Children[0].DisplayName.Is("1日");
+            data.Children[0].Children[0].Children[0].Children[0].Children[0].Children[0].Children[0].Children[0].TimeScale.DisplayName.Is("1日");
+        }
+
+        [Fact(DisplayName = "CandleMaker親のテスト")]
+        [Trait("Category", "CandleMakerの動作")]
+        public void Test2()
+        {
+            // InMemoryDBを使うオプションを作成
+            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseInMemoryDatabase(databaseName: "Test2")
+                .Options;
+
+            CandleMaker data = null;
+            using (var dbContext = new ApplicationDbContext(options)) // InMemoryDBを使うオプション設定を渡す
+            {
+                // インスタンス作成
+                data = CandleMaker.MakeGeneration(Logger, dbContext, TimeScales, Boards[0]);
+
+                // Tickerを入力していく
+                data.Update(Tickers1m[0]); // "08/18/2018 07:22:16" 800000
+                // 最初のTickerが入力されたら、ローソクが作成される
+                data.CurrentCandle.IsNotNull();
+                data.CurrentCandle.Begin.Is(800000);
+                data.CurrentCandle.End.Is(800000);
+                data.CurrentCandle.Min.Is(800000);
+                data.CurrentCandle.Max.Is(800000);
+                // 1分足なので、開始と終了時間は1分ごとに切り捨て
+                data.CurrentCandle.BeginTime.Is(DateTime.Parse("08/18/2018 07:22:00"));
+                data.CurrentCandle.EndTime.Is(DateTime.Parse("08/18/2018 07:23:00"));
+
+                // ローソク更新確認:高値更新
+                data.Update(Tickers1m[1]);  // "08/18/2018 07:22:18" 802000
+                data.CurrentCandle.Begin.Is(800000);
+                data.CurrentCandle.End.Is(802000);
+                data.CurrentCandle.Min.Is(800000);
+                data.CurrentCandle.Max.Is(802000);
+
+                // ローソク更新確認:安値更新
+                // 1分経過していない場合、ローソクリストに加えない（境界値テスト）
+                data.Update(Tickers1m[2]);  // "08/18/2018 07:22:59" 799000
+                data.CurrentCandle.Begin.Is(800000);
+                data.CurrentCandle.End.Is(799000);
+                data.CurrentCandle.Min.Is(799000);
+                data.CurrentCandle.Max.Is(802000);
+                data.CandleList.Count.Is(0);
+
+                // 1分経過したらローソクリストに加える
+                // 1分経過した後のTicker価格はローソクリストのローソクに影響しない
+                // 1分経過した後のTicker価格は新しいローソクに反映する
+                data.Update(Tickers1m[3]); // "08/18/2018 07:23:00" 803000
+                data.CandleList.Count.Is(1);
+                data.CandleList[0].Begin.Is(800000);
+                data.CandleList[0].End.Is(799000);
+                data.CandleList[0].Min.Is(799000);
+                data.CandleList[0].Max.Is(802000);
+                data.CurrentCandle.Begin.Is(803000);
+                data.CurrentCandle.End.Is(803000);
+                data.CurrentCandle.Min.Is(803000);
+                data.CurrentCandle.Max.Is(803000);
+
+                // 5分経過したらローソク5本になっている
+                // 間のローソクはMin = Maxになっている
+                data.Update(Tickers1m[4]); // "08/18/2018 07:27:00" 805000
+                data.CandleList.Count.Is(5);
+                data.CandleList[3].Begin.Is(803000);
+                data.CandleList[3].End.Is(803000);
+                data.CandleList[3].Min.Is(803000);
+                data.CandleList[3].Max.Is(803000);
+                data.CandleList[4].Begin.Is(803000);
+                data.CandleList[4].End.Is(803000);
+                data.CandleList[4].Min.Is(803000);
+                data.CandleList[4].Max.Is(803000);
+                data.CurrentCandle.Begin.Is(805000);
+                data.CurrentCandle.End.Is(805000);
+                data.CurrentCandle.Min.Is(805000);
+                data.CurrentCandle.Max.Is(805000);
+
+                // 101分経過したらメモリの最初のローソクを削除する
+                data.Update(Tickers1m[5]); // "08/18/2018 09:08:00" 806000
+                data.CandleList.Count.Is(SystemConstants.MaxCandle);
+                data.CandleList[0].BeginTime.Is(DateTime.Parse("08/18/2018 07:23:00"));
+            }
+        }
+
+        [Fact(DisplayName = "CandleMaker子のテスト")]
+        [Trait("Category", "CandleMakerの動作")]
+        public void Test3()
+        {
+            // InMemoryDBを使うオプションを作成
+            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseInMemoryDatabase(databaseName: "Test3")
+                .Options;
+
+            CandleMaker data = null;
+            using (var dbContext = new ApplicationDbContext(options)) // InMemoryDBを使うオプション設定を渡す
+            {
+                // インスタンス作成
+                data = CandleMaker.MakeGeneration(Logger, dbContext, TimeScales, Boards[0]);
+
+                // 親にTickerを入力していく
+                data.Update(Tickers5m[0]);  // "08/18/2018 07:22:16" 800000
+                // 最初のTickerが入力されたら、ローソクが作成される
+                // 5分足なので、開始と終了時間は5分ごとに切り捨て
+                data.Children[0].CurrentCandle.BeginTime.Is(DateTime.Parse("08/18/2018 07:20:00"));
+                data.Children[0].CurrentCandle.EndTime.Is(DateTime.Parse("08/18/2018 07:25:00"));
+                data.Children[0].CurrentCandle.Begin.Is(800000);
+                data.Children[0].CurrentCandle.End.Is(800000);
+                data.Children[0].CurrentCandle.Min.Is(800000);
+                data.Children[0].CurrentCandle.Max.Is(800000);
+
+                // 1分経過したらローソクが更新される
+                data.Update(Tickers5m[1]);  // "08/18/2018 07:23:00" 802000
+                data.Children[0].CurrentCandle.Begin.Is(800000);
+                data.Children[0].CurrentCandle.End.Is(802000);
+                data.Children[0].CurrentCandle.Min.Is(800000);
+                data.Children[0].CurrentCandle.Max.Is(802000);
+
+                // 5分経過していない場合、ローソクリストに加えない（境界値テスト）
+                // 安値更新
+                data.Update(Tickers5m[2]);  // "08/18/2018 07:24:59" 799000
+                data.Children[0].CurrentCandle.Begin.Is(800000);
+                data.Children[0].CurrentCandle.End.Is(799000);
+                data.Children[0].CurrentCandle.Min.Is(799000);
+                data.Children[0].CurrentCandle.Max.Is(802000);
+                data.Children[0].CandleList.Count.Is(0);
+
+                // 5分経過したらローソクリストに加える
+                // 5分経過した後のTicker価格はローソクリストのローソクに影響しない
+                // 5分経過した後のTicker価格は新しいローソクに反映する
+                data.Update(Tickers5m[3]);  // "08/18/2018 07:25:00" 803000
+                data.Children[0].CandleList[0].Begin.Is(800000);
+                data.Children[0].CandleList[0].End.Is(799000);
+                data.Children[0].CandleList[0].Min.Is(799000);
+                data.Children[0].CandleList[0].Max.Is(802000);
+                data.Children[0].CurrentCandle.Begin.Is(803000);
+                data.Children[0].CurrentCandle.End.Is(803000);
+                data.Children[0].CurrentCandle.Min.Is(803000);
+                data.Children[0].CurrentCandle.Max.Is(803000);
+                data.Children[0].CandleList.Count.Is(1);
+
+                // 15分経過したらローソク3本になっている
+                // 間のローソクはMin = Maxになっている
+                data.Update(Tickers5m[4]);  // "08/18/2018 07:35:00" 805000
+                data.Children[0].CandleList.Count.Is(3);
+                data.Children[0].CandleList[1].Begin.Is(803000);
+                data.Children[0].CandleList[1].End.Is(803000);
+                data.Children[0].CandleList[1].Min.Is(803000);
+                data.Children[0].CandleList[1].Max.Is(803000);
+                data.Children[0].CandleList[2].Begin.Is(803000);
+                data.Children[0].CandleList[2].End.Is(803000);
+                data.Children[0].CandleList[2].Min.Is(803000);
+                data.Children[0].CandleList[2].Max.Is(803000);
+                data.Children[0].CurrentCandle.Begin.Is(805000);
+                data.Children[0].CurrentCandle.End.Is(805000);
+                data.Children[0].CurrentCandle.Min.Is(805000);
+                data.Children[0].CurrentCandle.Max.Is(805000);
+
+                // 505分経過したらメモリの最初のローソクを削除する
+                data.Update(Tickers5m[5]);  // "08/18/2018 09:08:00" 806000
+                data.Children[0].CandleList.Count.Is(SystemConstants.MaxCandle);
+                data.Children[0].CandleList[0].BeginTime.Is(DateTime.Parse("08/18/2018 07:25:00"));
+            }
         }
 
         #region xUnitの基本機能
@@ -169,44 +477,3 @@ namespace PenguinSteamerTest
         #endregion
     }
 }
-
-///// <summary>
-///// 最新のTicker
-///// 値を持つのは一番親のみ
-///// 未取得の場合もnull
-///// </summary>
-//public Ticker CurrentTicker { get; private set; }
-
-///// <summary>
-///// 最新のローソク（作成途中のローソク）
-///// 完成したローソクはDBへ
-///// </summary>
-//public Candle CurrentCandle { get; private set; }
-
-///// <summary>
-///// 今まで作ったローソク
-///// </summary>
-//public List<Candle> CandleList { get; }
-
-///// <summary>
-///// 時間足
-///// </summary>
-//public MTimeScale TimeScale { get; }
-
-///// <summary>
-///// どの板か
-///// </summary>
-//public MBoard Board { get; }
-
-//Update(Ticker ticker)
-//        Tickerでローソクを更新する
-//        時間が過ぎていたらローソク更新。
-//        大きく時間が過ぎていたら複数本ローソク更新。
-        
-//        時間が過ぎていたら子を更新する
-
-//        最大データ数を超えていたら古いデータを削除する※データ生成が必要
-        
-//        ■Candleクラス
-//        Tickerによってローソクを更新する
-//        ローソクデータによってローソクを更新する

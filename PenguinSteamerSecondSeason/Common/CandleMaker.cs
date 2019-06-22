@@ -65,11 +65,6 @@ namespace PenguinSteamerSecondSeason.Common
         public MTimeScale TimeScale { get; }
 
         /// <summary>
-        /// 表示名
-        /// </summary>
-        public string DisplayName { get; }
-
-        /// <summary>
         /// どの板か
         /// </summary>
         public MBoard Board { get; }
@@ -78,19 +73,20 @@ namespace PenguinSteamerSecondSeason.Common
 
         #region コンストラクタ（外から呼ばない）
         /// <summary>
-        /// 子を作成するコンストラクタ
+        /// 親または子を作成するコンストラクタ
         /// </summary>
-        /// <param name="dbContext"></param>
-        /// <param name="timeScale"></param>
-        /// <param name="displayName"></param>
-        /// <param name="board">MBoard</param>
-        CandleMaker(ApplicationDbContext dbContext, MTimeScale timeScale, string displayName, MBoard board)
+        /// <param name="logger">ロガー</param>
+        /// <param name="dbContext">DB接続</param>
+        /// <param name="timeScales">時間足リスト、時間が短い順</param>
+        /// <param name="board">板情報</param>
+        CandleMaker(ILogger logger, ApplicationDbContext dbContext, MTimeScale timeScale, MBoard board)
         {
+            logger.LogInformation($"CandleMaker親子作成:{board.Name} {timeScale.DisplayName}");
+            Logger = logger;
             Children = new List<CandleMaker>();
             DbContext = dbContext;
             CandleList = new List<Candle>();
             TimeScale = timeScale;
-            DisplayName = displayName;
             Board = board;
         }
         #endregion
@@ -101,12 +97,15 @@ namespace PenguinSteamerSecondSeason.Common
         /// 親に約数が無い秒数の時間足は捨てられる
         /// 外からはコンストラクタではなく、このメソッドで作成する
         /// </summary>
+        /// <param name="logger">ロガー</param>
         /// <param name="dbContext">DB接続</param>
         /// <param name="timeScales">時間足リスト、時間が短い順</param>
         /// <param name="board">MBoard</param>
         /// <returns>親子関係付きCandleMakerインスタンス</returns>
         public static CandleMaker MakeGeneration(ILogger logger, ApplicationDbContext dbContext, List<MTimeScale> timeScales, MBoard board)
         {
+            logger.LogInformation($"CandleMaker作成:{board.Name}");
+
             // 元のリストに影響を与えないよう、コピーして使用する
             var execList = new List<MTimeScale>(timeScales);
 
@@ -124,7 +123,7 @@ namespace PenguinSteamerSecondSeason.Common
                 execList.Remove(longest);
 
                 // インスタンス作成し、一旦親に設定する
-                result = new CandleMaker(dbContext, longest, longest.DisplayName, board);
+                result = new CandleMaker(logger, dbContext, longest, board);
 
                 // 取り出したものが親か確認する
                 List<CandleMaker> delList = new List<CandleMaker>();
@@ -133,6 +132,7 @@ namespace PenguinSteamerSecondSeason.Common
                     if(item.TimeScale.SecondsValue % result.TimeScale.SecondsValue == 0)
                     {
                         // 約数ならば親に設定、子ども候補から削除
+                        logger.LogDebug($"親子関係設定:{result.TimeScale.DisplayName} <- {item.TimeScale.DisplayName}");
                         result.Children.Add(item);
                         delList.Add(item);
                     }
@@ -151,6 +151,7 @@ namespace PenguinSteamerSecondSeason.Common
 
         #endregion
 
+        #region Update
         /// <summary>
         /// 親専用
         /// Tickerでローソクを更新する
@@ -167,6 +168,7 @@ namespace PenguinSteamerSecondSeason.Common
                 if (SystemConstants.IsFirstDeleteCandle)
                 {
                     // この板の全ローソクデータを削除
+                    Logger.LogInformation($"ローソクデータ全削除:{Board.Name}");
                     var delList = DbContext.Candles.Where(d => d.Board.Id == Board.Id).ToList();
                     DbContext.Candles.RemoveRange(delList);
                     DbContext.SaveChanges();
@@ -174,6 +176,9 @@ namespace PenguinSteamerSecondSeason.Common
 
                 // 新しいローソクの準備
                 CurrentCandle = new Candle(Board, TimeScale, CurrentTicker);
+
+                // 子要素を新しいローソクで更新
+                UpdateChildren(CurrentCandle);
             }
             else // 初回ではない場合
             {
@@ -184,7 +189,11 @@ namespace PenguinSteamerSecondSeason.Common
                 {
                     // 新しいローソクがある場合
                     // 現在のローソクでDB更新
+                    Logger.LogDebug($"DB:Candles更新:{Board.Name} {TimeScale.DisplayName}");
                     DbContext.Candles.Add(CurrentCandle);
+
+                    // 今まで作成したローソクに追加
+                    CandleList.Add(CurrentCandle);
 
                     // 子要素を新しいローソクで更新
                     UpdateChildren(item);
@@ -211,15 +220,41 @@ namespace PenguinSteamerSecondSeason.Common
         /// </summary>
         private void DeleteOldData()
         {
-            var count = DbContext.Candles.Where(d => d.TimeScale.Id == TimeScale.Id && d.Board.Id == Board.Id).Count();
-            int delCount = count - SystemConstants.MaxCandle;
-            if (delCount > 0)
+            if (TimeScale.Id ==1)
             {
-                // 古いデータを削除
-                // ※遅いようだったらOrderByの使用をやめておく
-                DbContext.Candles.Remove(
-                    DbContext.Candles.OrderBy(d => d.Id).First(d => d.TimeScale.Id == TimeScale.Id && d.Board.Id == Board.Id)
-                    );
+                Console.WriteLine("z");
+            }
+            // コミットしていない分は数えられないことに注意
+            // 今は起動のたびに消しているから良いが、メモリ内ローソクとDBのローソクの数が異なる場合があることも注意
+            // →コミット済みに関して、メモリローソクの数を上回った分を削除するようにする
+            if(CandleList.Count > SystemConstants.MaxCandle)
+            {
+                // 今まで作成したローソクから削除
+                int delCount = CandleList.Count - SystemConstants.MaxCandle;
+                for (int i = 0; i < delCount; i++)
+                {
+                    CandleList.RemoveAt(0);
+                }
+            }
+
+            var count = DbContext.Candles.Where(d => d.TimeScale.Id == TimeScale.Id && d.Board.Id == Board.Id).Count();
+            // DBの、メモリのローソクよりも多い分を削除（今回コミットされてないものは除くので、1件ズレたりする）
+            // ※遅いようだったらOrderByの使用をやめておく
+            if (count > CandleList.Count)
+            {
+                int delCount = count - CandleList.Count;
+                Logger.LogDebug($"Candle{delCount}件削除:{Board.Name} {TimeScale.DisplayName}");
+                var delList = new List<Candle>(delCount);
+                var dataList = DbContext.Candles.Where(d => d.TimeScale.Id == TimeScale.Id && d.Board.Id == Board.Id).OrderBy(d => d.Id).ToList();
+
+                for (int i = 0; i < delCount; i++)
+                {
+                    delList.Add(dataList[i]);
+                }
+                foreach (var item in delList)
+                {
+                    DbContext.Candles.Remove(item);
+                }
             }
         }
 
@@ -242,6 +277,7 @@ namespace PenguinSteamerSecondSeason.Common
         /// <param name="candle">ローソクデータ</param>
         public void UpdateByCandle(Candle candle)
         {
+            Logger.LogDebug($"DB:Candles更新:{Board.Name} {TimeScale.DisplayName}");
             if (CurrentCandle == null)
             {
                 // 初回
@@ -262,6 +298,9 @@ namespace PenguinSteamerSecondSeason.Common
                     // 現在のローソクでDB更新
                     DbContext.Candles.Add(CurrentCandle);
 
+                    // 今まで作成したローソクに追加
+                    CandleList.Add(CurrentCandle);
+
                     // 子要素を新しいローソクで更新
                     UpdateChildren(item);
 
@@ -276,5 +315,6 @@ namespace PenguinSteamerSecondSeason.Common
                 }
             }
         }
+        #endregion
     }
 }
