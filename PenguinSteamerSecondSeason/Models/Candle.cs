@@ -39,6 +39,9 @@ namespace PenguinSteamerSecondSeason.Models
 
         /// <summary>
         /// ローソク終了時刻
+        /// 注意：この時刻は現在のローソクに含まない
+        /// 例えばこれが"08/18/2018 07:23:00"の場合、
+        /// 07:22:59はこのローソクの範囲内だが、07:23:00は次のローソクの範囲である。
         /// </summary>
         public DateTime EndTime { get; set; }
 
@@ -105,28 +108,6 @@ namespace PenguinSteamerSecondSeason.Models
             End = ticker.Ltp;
             Volume = ticker.Volume;
         }
-
-        ///// <summary>
-        ///// ローソク足データ
-        ///// 親ローソクメーカー更新時の作成用
-        ///// </summary>
-        ///// <param name="board">板</param>
-        ///// <param name="timeScale">時間足</param>
-        ///// <param name="ticker">現在のTicker</param>
-        ///// <param name="endTime">新しく作成するローソクの終了時刻</param>
-        //private Candle(MBoard board, MTimeScale timeScale, Ticker ticker, DateTime endTime)
-        //{
-        //    Board = board;
-        //    TimeScale = timeScale;
-        //    EndTime = endTime;
-        //    BeginTime = EndTime.AddSeconds(-TimeScale.SecondsValue);
-
-        //    Min = ticker.Ltp;
-        //    Max = ticker.Ltp;
-        //    Begin = ticker.Ltp;
-        //    End = ticker.Ltp;
-        //    Volume = ticker.Volume;
-        //}
 
         /// <summary>
         /// ローソク足データ
@@ -203,7 +184,7 @@ namespace PenguinSteamerSecondSeason.Models
             {
                 // 新しいローソクを作成
                 CurrentEndTime = CurrentEndTime.AddSeconds(TimeScale.SecondsValue);
-                var newCandle = new Candle(Board, TimeScale, this, CurrentEndTime);   // TODO:前のローソクの値を引き継がなければならないのに、最新のTickerの値を使ってしまっている。
+                var newCandle = new Candle(Board, TimeScale, this, CurrentEndTime);
                 if(newCandle.EndTime > ticker.Timestamp)
                 {
                     // 新しいローソクの範囲内にTickerがあるときは、tickerの値をローソクに反映
@@ -248,14 +229,8 @@ namespace PenguinSteamerSecondSeason.Models
             var CurrentEndTime = EndTime;
             while (candle.BeginTime >= CurrentEndTime)
             {
-                // 新しいローソクを作成
-                //CurrentEndTime = CurrentEndTime.AddSeconds(TimeScale.SecondsValue);
-                //var newCandle = new Candle(Board, TimeScale, candle, CurrentEndTime);
-                //result.Add(newCandle);
-
-
                 CurrentEndTime = CurrentEndTime.AddSeconds(TimeScale.SecondsValue);
-                var newCandle = new Candle(Board, TimeScale, this, CurrentEndTime);   // TODO:前のローソクの値を引き継がなければならないのに、最新のTickerの値を使ってしまっている。
+                var newCandle = new Candle(Board, TimeScale, this, CurrentEndTime);
                 if (newCandle.EndTime > candle.BeginTime)
                 {
                     // candleの開始時間が新しいローソクの範囲内ならば、最新の値（終値）をローソクに反映
