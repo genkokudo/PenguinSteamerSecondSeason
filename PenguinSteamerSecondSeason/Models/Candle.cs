@@ -24,13 +24,13 @@ namespace PenguinSteamerSecondSeason.Models
         /// どの取引所、通貨ペアか
         /// </summary>
         [Index("BoardAndTimeScale", 1)]    // 複合インデックス
-        public MBoard Board { get; set; }
+        public MBoard MBoard { get; set; }
 
         /// <summary>
         /// 時間足
         /// </summary>
         [Index("BoardAndTimeScale", 2)]    // 複合インデックス
-        public MTimeScale TimeScale { get; set; }
+        public MTimeScale MTimeScale { get; set; }
 
         /// <summary>
         /// ローソク開始時刻
@@ -90,17 +90,17 @@ namespace PenguinSteamerSecondSeason.Models
         /// <param name="ticker">現在のTicker</param>
         public Candle(MBoard board, MTimeScale timeScale, Ticker ticker)
         {
-            Board = board;
-            TimeScale = timeScale;
+            MBoard = board;
+            MTimeScale = timeScale;
 
             // 切り捨てて、ローソクの開始時刻を求める
             BeginTime = ticker.Timestamp;
             int TimeSeconds = ((BeginTime.Hour * 60 + BeginTime.Minute) * 60 + BeginTime.Second);
-            BeginTime = BeginTime.AddSeconds(-(TimeSeconds % TimeScale.SecondsValue));
+            BeginTime = BeginTime.AddSeconds(-(TimeSeconds % MTimeScale.SecondsValue));
             BeginTime.AddMilliseconds(-BeginTime.Millisecond);  // ミリ秒切り捨て
 
             // 終了時刻を求める
-            EndTime = BeginTime.AddSeconds(TimeScale.SecondsValue);
+            EndTime = BeginTime.AddSeconds(MTimeScale.SecondsValue);
 
             Min = ticker.Ltp;
             Max = ticker.Ltp;
@@ -119,17 +119,17 @@ namespace PenguinSteamerSecondSeason.Models
         /// <param name="candle">親から送られてきたローソク</param>
         public Candle(MBoard board, MTimeScale timeScale, Candle candle)
         {
-            Board = board;
-            TimeScale = timeScale;
+            MBoard = board;
+            MTimeScale = timeScale;
 
             // 開始時刻は、この時間足で切り捨てる
             BeginTime = candle.BeginTime;
             int TimeSeconds = ((BeginTime.Hour * 60 + BeginTime.Minute) * 60 + BeginTime.Second);
-            BeginTime = BeginTime.AddSeconds(-(TimeSeconds % TimeScale.SecondsValue));
+            BeginTime = BeginTime.AddSeconds(-(TimeSeconds % MTimeScale.SecondsValue));
             BeginTime.AddMilliseconds(-BeginTime.Millisecond);  // ミリ秒切り捨て
 
             // 終了時刻を求める
-            EndTime = BeginTime.AddSeconds(TimeScale.SecondsValue);
+            EndTime = BeginTime.AddSeconds(MTimeScale.SecondsValue);
 
             Min = candle.End;
             Max = candle.End;
@@ -155,10 +155,10 @@ namespace PenguinSteamerSecondSeason.Models
         /// <param name="endTime">新しく作成するローソクの終了時刻</param>
         private Candle(MBoard board, MTimeScale timeScale, Candle candle, DateTime endTime)
         {
-            Board = board;
-            TimeScale = timeScale;
+            MBoard = board;
+            MTimeScale = timeScale;
             EndTime = endTime;
-            BeginTime = EndTime.AddSeconds(-TimeScale.SecondsValue);
+            BeginTime = EndTime.AddSeconds(-MTimeScale.SecondsValue);
 
             Min = candle.End;
             Max = candle.End;
@@ -183,8 +183,8 @@ namespace PenguinSteamerSecondSeason.Models
             while (ticker.Timestamp >= CurrentEndTime)
             {
                 // 新しいローソクを作成
-                CurrentEndTime = CurrentEndTime.AddSeconds(TimeScale.SecondsValue);
-                var newCandle = new Candle(Board, TimeScale, this, CurrentEndTime);
+                CurrentEndTime = CurrentEndTime.AddSeconds(MTimeScale.SecondsValue);
+                var newCandle = new Candle(MBoard, MTimeScale, this, CurrentEndTime);
                 if(newCandle.EndTime > ticker.Timestamp)
                 {
                     // 新しいローソクの範囲内にTickerがあるときは、tickerの値をローソクに反映
@@ -229,8 +229,8 @@ namespace PenguinSteamerSecondSeason.Models
             var CurrentEndTime = EndTime;
             while (candle.BeginTime >= CurrentEndTime)
             {
-                CurrentEndTime = CurrentEndTime.AddSeconds(TimeScale.SecondsValue);
-                var newCandle = new Candle(Board, TimeScale, this, CurrentEndTime);
+                CurrentEndTime = CurrentEndTime.AddSeconds(MTimeScale.SecondsValue);
+                var newCandle = new Candle(MBoard, MTimeScale, this, CurrentEndTime);
                 if (newCandle.EndTime > candle.BeginTime)
                 {
                     // candleの開始時間が新しいローソクの範囲内ならば、最新の値（終値）をローソクに反映

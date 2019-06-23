@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -12,6 +13,25 @@ using System.Threading.Tasks;
 
 namespace PenguinSteamerSecondSeason
 {
+    /// <summary>
+    /// このホスティングの方法だと、EFCoreのマイグレーションでエラーが出るため
+    /// このようなFactoryクラスを準備する
+    /// </summary>
+    public class ContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
+    {
+        public ApplicationDbContext CreateDbContext(string[] args)
+        {
+            var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+            optionsBuilder.UseMySql("Server=localhost;Database=penguin;User Id=ginpay;Password=password;",
+                mySqlOptions =>
+                {
+                    mySqlOptions.ServerVersion(new Version(10, 3, 13), ServerType.MariaDb);
+                }
+            );
+            return new ApplicationDbContext(optionsBuilder.Options);
+        }
+    }
+
     class Program
     {
         #region Main
@@ -69,19 +89,18 @@ namespace PenguinSteamerSecondSeason
                 })
                 .ConfigureServices((services) =>
                 {
-                    // DBコンテキストを設定する、マイグレをする時はここを確認する
+                    // DBコンテキストを設定する
                     MakeDbContext(services, configuration, envName);
 
                     // サービス処理のDI
                     // ログ
                     services.AddLogging();
                     // WebSocket管理（シングルトンで追加する方法）
-                    //services.AddHostedService<IWebSocketService, WebSocketService>();
                     services.AddSingleton<ITickerService, TickerService>();
                     // Ticker登録（インジェクションごとにインスタンス作成する方法）
                     //services.AddTransient<ITickerService, TickerService>();
                     // メインロジック
-                    // IHostedServiceを実装すると、AddHostedServiceで指定することで動かせる。
+                    // IHostedServiceを実装したクラスは、AddHostedServiceで指定することで自動起動する。
                     services.AddHostedService<WebSocketService>();
                     services.AddHostedService<Application>();
                 })
@@ -97,7 +116,7 @@ namespace PenguinSteamerSecondSeason
         }
         #endregion
 
-        #region DBコンテキストを作成して、サービスに追加する、マイグレの時はここ
+        #region DBコンテキストを作成して、サービスに追加する
         /// <summary>
         /// DBコンテキストを作成して、サービスに追加する
         /// 環境によって分岐

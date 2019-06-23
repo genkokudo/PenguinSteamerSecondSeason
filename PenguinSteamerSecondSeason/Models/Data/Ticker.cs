@@ -24,7 +24,8 @@ namespace PenguinSteamerSecondSeason.Data
         /// <param name="lightningTicker"></param>
         public Ticker(LightningTicker lightningTicker)
         {
-            //Exchange = exchange;
+            // 世界標準時なので9時間遅い、直すかどうかは他の取引所と合わせること
+            // "timestamp": "2019-06-23T16:10:41.0272447Z"
             Timestamp = lightningTicker.timestamp;
             TickId = lightningTicker.tick_id;
             BestBid = (decimal)lightningTicker.best_bid;

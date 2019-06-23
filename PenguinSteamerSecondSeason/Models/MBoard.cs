@@ -16,8 +16,17 @@ namespace PenguinSteamerSecondSeason.Models
     {
         /// <summary>
         /// 通し番号
+        /// クラス名+Idにしないと紐づかない事に注意
         /// </summary>
-        public int Id { get; set; }
+        public int MBoardId { get; set; }
+        /// <summary>
+        /// 通貨1
+        /// </summary>
+        public MCurrency MCurrency1 { get; set; }
+        /// <summary>
+        /// 通貨2
+        /// </summary>
+        public MCurrency MCurrency2 { get; set; }
         /// <summary>
         /// 名前
         /// </summary>
@@ -26,15 +35,6 @@ namespace PenguinSteamerSecondSeason.Models
         /// 表示名
         /// </summary>
         public string DisplayName { get; set; }
-
-        /// <summary>
-        /// 通貨1
-        /// </summary>
-        public MCurrency Currency1 { get; set; }
-        /// <summary>
-        /// 通貨2
-        /// </summary>
-        public MCurrency Currency2 { get; set; }
 
         #region 共通項目
         /// <summary>

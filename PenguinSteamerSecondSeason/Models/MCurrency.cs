@@ -14,7 +14,7 @@ namespace PenguinSteamerSecondSeason.Models
         /// <summary>
         /// 通し番号
         /// </summary>
-        public int Id { get; set; }
+        public int MCurrencyId { get; set; }
         /// <summary>
         /// 名前
         /// </summary>

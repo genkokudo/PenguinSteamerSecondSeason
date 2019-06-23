@@ -12,9 +12,9 @@ namespace PenguinSteamerSecondSeason
     // データモデルを追加したとき、このクラスも更新すること
     public class ApplicationDbContext : DbContext
     {
+        // このフィールド名がテーブル名となる、小文字にされる
         public DbSet<MCurrency> MCurrencies { get; set; }
         public DbSet<MBoard> MBoards { get; set; }
-        //public DbSet<MExchange> MExchanges { get; set; }
         public DbSet<MTimeScale> MTimeScales { get; set; }
         public DbSet<MWebSocket> MWebSockets { get; set; }
         public DbSet<Candle> Candles { get; set; }
@@ -25,11 +25,6 @@ namespace PenguinSteamerSecondSeason
         /// <param name="options"></param>
         public ApplicationDbContext(DbContextOptions options) : base(options)
         {
-        }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            base.OnConfiguring(optionsBuilder);
         }
 
         #region 標準項目設定

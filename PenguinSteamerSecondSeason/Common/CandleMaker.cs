@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using PenguinSteamerSecondSeason.Data;
 using PenguinSteamerSecondSeason.Models;
 using System;
@@ -169,7 +170,7 @@ namespace PenguinSteamerSecondSeason.Common
                 {
                     // この板の全ローソクデータを削除
                     Logger.LogInformation($"ローソクデータ全削除:{Board.Name}");
-                    var delList = DbContext.Candles.Where(d => d.Board.Id == Board.Id).ToList();
+                    var delList = DbContext.Candles.Include(x => x.MBoard).Where(d => d.MBoard.MBoardId == Board.MBoardId).ToList();
                     DbContext.Candles.RemoveRange(delList);
                     DbContext.SaveChanges();
                 }
@@ -220,10 +221,6 @@ namespace PenguinSteamerSecondSeason.Common
         /// </summary>
         private void DeleteOldData()
         {
-            if (TimeScale.Id ==1)
-            {
-                Console.WriteLine("z");
-            }
             // コミットしていない分は数えられないことに注意
             // 今は起動のたびに消しているから良いが、メモリ内ローソクとDBのローソクの数が異なる場合があることも注意
             // →コミット済みに関して、メモリローソクの数を上回った分を削除するようにする
@@ -237,7 +234,7 @@ namespace PenguinSteamerSecondSeason.Common
                 }
             }
 
-            var count = DbContext.Candles.Where(d => d.TimeScale.Id == TimeScale.Id && d.Board.Id == Board.Id).Count();
+            var count = DbContext.Candles.Include(x => x.MTimeScale).Include(x => x.MBoard).Where(d => d.MTimeScale.Id == TimeScale.Id && d.MBoard.MBoardId == Board.MBoardId).Count();
             // DBの、メモリのローソクよりも多い分を削除（今回コミットされてないものは除くので、1件ズレたりする）
             // ※遅いようだったらOrderByの使用をやめておく
             if (count > CandleList.Count)
@@ -245,7 +242,7 @@ namespace PenguinSteamerSecondSeason.Common
                 int delCount = count - CandleList.Count;
                 Logger.LogDebug($"Candle{delCount}件削除:{Board.Name} {TimeScale.DisplayName}");
                 var delList = new List<Candle>(delCount);
-                var dataList = DbContext.Candles.Where(d => d.TimeScale.Id == TimeScale.Id && d.Board.Id == Board.Id).OrderBy(d => d.Id).ToList();
+                var dataList = DbContext.Candles.Where(d => d.MTimeScale.Id == TimeScale.Id && d.MBoard.MBoardId == Board.MBoardId).OrderBy(d => d.Id).ToList();
 
                 for (int i = 0; i < delCount; i++)
                 {

@@ -9,8 +9,8 @@ using PenguinSteamerSecondSeason;
 namespace PenguinSteamerSecondSeason.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20190611095228_AddWebSocket2")]
-    partial class AddWebSocket2
+    [Migration("20190623155419_Initial")]
+    partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -26,7 +26,7 @@ namespace PenguinSteamerSecondSeason.Migrations
 
                     b.Property<decimal>("Begin");
 
-                    b.Property<int?>("BoardId");
+                    b.Property<DateTime>("BeginTime");
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(255);
@@ -35,15 +35,17 @@ namespace PenguinSteamerSecondSeason.Migrations
 
                     b.Property<decimal>("End");
 
+                    b.Property<DateTime>("EndTime");
+
                     b.Property<bool>("IsDeleted");
+
+                    b.Property<int?>("MBoardId");
+
+                    b.Property<int?>("MTimeScaleId");
 
                     b.Property<decimal>("Max");
 
                     b.Property<decimal>("Min");
-
-                    b.Property<int?>("TimeScaleId");
-
-                    b.Property<string>("TimeStamp");
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255);
@@ -54,16 +56,16 @@ namespace PenguinSteamerSecondSeason.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BoardId");
+                    b.HasIndex("MBoardId");
 
-                    b.HasIndex("TimeScaleId");
+                    b.HasIndex("MTimeScaleId");
 
                     b.ToTable("Candles");
                 });
 
             modelBuilder.Entity("PenguinSteamerSecondSeason.Models.MBoard", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("MBoardId")
                         .ValueGeneratedOnAdd();
 
                     b.Property<string>("CreatedBy")
@@ -71,13 +73,13 @@ namespace PenguinSteamerSecondSeason.Migrations
 
                     b.Property<DateTime?>("CreatedDate");
 
-                    b.Property<int?>("Currency1Id");
-
-                    b.Property<int?>("Currency2Id");
-
                     b.Property<string>("DisplayName");
 
                     b.Property<bool>("IsDeleted");
+
+                    b.Property<int?>("MCurrency1MCurrencyId");
+
+                    b.Property<int?>("MCurrency2MCurrencyId");
 
                     b.Property<string>("Name");
 
@@ -86,18 +88,18 @@ namespace PenguinSteamerSecondSeason.Migrations
 
                     b.Property<DateTime?>("UpdatedDate");
 
-                    b.HasKey("Id");
+                    b.HasKey("MBoardId");
 
-                    b.HasIndex("Currency1Id");
+                    b.HasIndex("MCurrency1MCurrencyId");
 
-                    b.HasIndex("Currency2Id");
+                    b.HasIndex("MCurrency2MCurrencyId");
 
                     b.ToTable("MBoards");
                 });
 
             modelBuilder.Entity("PenguinSteamerSecondSeason.Models.MCurrency", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("MCurrencyId")
                         .ValueGeneratedOnAdd();
 
                     b.Property<string>("CreatedBy")
@@ -116,7 +118,7 @@ namespace PenguinSteamerSecondSeason.Migrations
 
                     b.Property<DateTime?>("UpdatedDate");
 
-                    b.HasKey("Id");
+                    b.HasKey("MCurrencyId");
 
                     b.ToTable("MCurrencies");
                 });
@@ -152,8 +154,6 @@ namespace PenguinSteamerSecondSeason.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<int?>("BoardId");
-
                     b.Property<int>("Category");
 
                     b.Property<string>("ChannelName");
@@ -169,6 +169,8 @@ namespace PenguinSteamerSecondSeason.Migrations
 
                     b.Property<bool>("IsEnabled");
 
+                    b.Property<int?>("MBoardId");
+
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255);
 
@@ -176,38 +178,38 @@ namespace PenguinSteamerSecondSeason.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BoardId");
+                    b.HasIndex("MBoardId");
 
                     b.ToTable("MWebSockets");
                 });
 
             modelBuilder.Entity("PenguinSteamerSecondSeason.Models.Candle", b =>
                 {
-                    b.HasOne("PenguinSteamerSecondSeason.Models.MBoard", "Board")
+                    b.HasOne("PenguinSteamerSecondSeason.Models.MBoard", "MBoard")
                         .WithMany()
-                        .HasForeignKey("BoardId");
+                        .HasForeignKey("MBoardId");
 
-                    b.HasOne("PenguinSteamerSecondSeason.Models.MTimeScale", "TimeScale")
+                    b.HasOne("PenguinSteamerSecondSeason.Models.MTimeScale", "MTimeScale")
                         .WithMany()
-                        .HasForeignKey("TimeScaleId");
+                        .HasForeignKey("MTimeScaleId");
                 });
 
             modelBuilder.Entity("PenguinSteamerSecondSeason.Models.MBoard", b =>
                 {
-                    b.HasOne("PenguinSteamerSecondSeason.Models.MCurrency", "Currency1")
+                    b.HasOne("PenguinSteamerSecondSeason.Models.MCurrency", "MCurrency1")
                         .WithMany()
-                        .HasForeignKey("Currency1Id");
+                        .HasForeignKey("MCurrency1MCurrencyId");
 
-                    b.HasOne("PenguinSteamerSecondSeason.Models.MCurrency", "Currency2")
+                    b.HasOne("PenguinSteamerSecondSeason.Models.MCurrency", "MCurrency2")
                         .WithMany()
-                        .HasForeignKey("Currency2Id");
+                        .HasForeignKey("MCurrency2MCurrencyId");
                 });
 
             modelBuilder.Entity("PenguinSteamerSecondSeason.Models.MWebSocket", b =>
                 {
-                    b.HasOne("PenguinSteamerSecondSeason.Models.MBoard", "Board")
+                    b.HasOne("PenguinSteamerSecondSeason.Models.MBoard", "MBoard")
                         .WithMany()
-                        .HasForeignKey("BoardId");
+                        .HasForeignKey("MBoardId");
                 });
 #pragma warning restore 612, 618
         }

@@ -66,6 +66,9 @@ namespace PenguinSteamerSecondSeason
 
         /// <summary>
         /// DB確認して、データが無ければ初期データを入れる
+        /// これは1か所でやらないとダメ
+        /// 外部キーを含むデータを先に登録すると、そのキーの空データが登録されてしまうので
+        /// 外部キーデータの登録が先になるように登録順を工夫する必要もあることに注意
         /// </summary>
         /// <returns></returns>
         private async Task InitializeDatabaseAsync()
@@ -81,7 +84,7 @@ namespace PenguinSteamerSecondSeason
                 {
                     var data = new MCurrency
                     {
-                        Id = int.Parse(item[0]),
+                        MCurrencyId = int.Parse(item[0]),
                         Name = item[1],
                         DisplayName = item[2]
                     };
@@ -100,11 +103,11 @@ namespace PenguinSteamerSecondSeason
                 {
                     var data = new MBoard
                     {
-                        Id = int.Parse(item[0]),
+                        MBoardId = int.Parse(item[0]),
                         Name = item[1],
                         DisplayName = item[2],
-                        Currency1 = new MCurrency { Id = int.Parse(item[3]) },
-                        Currency2 = new MCurrency { Id = int.Parse(item[4]) }
+                        MCurrency1 = new MCurrency { MCurrencyId = int.Parse(item[3]) },
+                        MCurrency2 = new MCurrency { MCurrencyId = int.Parse(item[4]) }
                     };
                     DbContext.MBoards.Add(data);
                 }
@@ -130,27 +133,27 @@ namespace PenguinSteamerSecondSeason
                 await DbContext.SaveChangesAsync(SystemConstants.SystemName);
             }
 
-            //if (DbContext.MWebSockets.ToList().Count == 0)
-            //{
-            //    Logger.LogInformation("WebSocketデータがありません。初期値を登録します。");
-            //    var array = new List<string[]>();
-            //    var section = Configuration.GetSection("DefaultParameters");
-            //    section.Bind("MWebSocket", array);
-            //    foreach (var item in array)
-            //    {
-            //        var data = new MWebSocket
-            //        {
-            //            Id = int.Parse(item[0]),
-            //            Board = new MBoard { Id = int.Parse(item[1]) },
-            //            Category = int.Parse(item[2]),
-            //            EndPoint = item[3],
-            //            ChannelName = item[4],
-            //            IsEnabled = int.Parse(item[5]) == 1
-            //        };
-            //        DbContext.MWebSockets.Add(data);
-            //    }
-            //    await DbContext.SaveChangesAsync(SystemConstants.SystemName);
-            //}
+            if (DbContext.MWebSockets.ToList().Count == 0)
+            {
+                Logger.LogInformation("WebSocketデータがありません。初期値を登録します。");
+                var array = new List<string[]>();
+                var section = Configuration.GetSection("DefaultParameters");
+                section.Bind("MWebSocket", array);
+                foreach (var item in array)
+                {
+                    var data = new MWebSocket
+                    {
+                        Id = int.Parse(item[0]),
+                        MBoard = new MBoard { MBoardId = int.Parse(item[1]) },
+                        Category = int.Parse(item[2]),
+                        EndPoint = item[3],
+                        ChannelName = item[4],
+                        IsEnabled = int.Parse(item[5]) == 1
+                    };
+                    DbContext.MWebSockets.Add(data);
+                }
+                DbContext.SaveChanges(SystemConstants.SystemName);
+            }
         }
         #endregion
 

@@ -53,10 +53,10 @@ namespace PenguinSteamerTest
         /// </summary>
         private static readonly List<MBoard> Boards = new List<MBoard>
             {
-                new MBoard() { Id = 11, Name = "BITFLYER_BTC_JPY", DisplayName = "bitFlyeråªï®BTC" },
-                new MBoard() { Id = 12, Name = "BITFLYER_FX_BTC_JPY", DisplayName = "bitFlyerFX" },
-                new MBoard() { Id = 13, Name = "BITFLYER_ETH_BTC", DisplayName = "bitFlyeråªï®ETH" },
-                new MBoard() { Id = 14, Name = "BITFLYER_BCH_BTC", DisplayName = "bitFlyeråªï®BCH" }
+                new MBoard() { MBoardId = 11, Name = "BITFLYER_BTC_JPY", DisplayName = "bitFlyeråªï®BTC" },
+                new MBoard() { MBoardId = 12, Name = "BITFLYER_FX_BTC_JPY", DisplayName = "bitFlyerFX" },
+                new MBoard() { MBoardId = 13, Name = "BITFLYER_ETH_BTC", DisplayName = "bitFlyeråªï®ETH" },
+                new MBoard() { MBoardId = 14, Name = "BITFLYER_BCH_BTC", DisplayName = "bitFlyeråªï®BCH" }
             };
 
         /// <summary>
@@ -65,10 +65,10 @@ namespace PenguinSteamerTest
         /// </summary>
         private static readonly List<MCurrency> Currencies = new List<MCurrency>
             {
-                new MCurrency() { Id = 1, Name = "JPY", DisplayName = "â~" },
-                new MCurrency() { Id = 2, Name = "BTC", DisplayName = "BTC" },
-                new MCurrency() { Id = 3, Name = "ETH", DisplayName = "Ethereum" },
-                new MCurrency() { Id = 4, Name = "BCH", DisplayName = "Bitcoin Cash" }
+                new MCurrency() { MCurrencyId = 1, Name = "JPY", DisplayName = "â~" },
+                new MCurrency() { MCurrencyId = 2, Name = "BTC", DisplayName = "BTC" },
+                new MCurrency() { MCurrencyId = 3, Name = "ETH", DisplayName = "Ethereum" },
+                new MCurrency() { MCurrencyId = 4, Name = "BCH", DisplayName = "Bitcoin Cash" }
             };
         #endregion
 
@@ -468,7 +468,7 @@ namespace PenguinSteamerTest
             using (var context = new ApplicationDbContext(options))
             {
                 Assert.Equal(4, context.MCurrencies.Count());
-                var currencie = context.MCurrencies.First(e => e.Id == 1);
+                var currencie = context.MCurrencies.First(e => e.MCurrencyId == 1);
                 Assert.Equal("JPY", currencie.Name);
                 Assert.Equal(SystemConstants.SystemName, currencie.CreatedBy);
                 Assert.Equal(SystemConstants.SystemName, currencie.UpdatedBy);

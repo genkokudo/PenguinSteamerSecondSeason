@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PenguinSteamerSecondSeason.Common;
@@ -50,7 +51,6 @@ namespace PenguinSteamerSecondSeason.Services
         /// Ticker管理
         /// </summary>
         private ITickerService TickerService { get; }
-
         /// <summary>
         /// 複数のWebSocketを管理する
         /// </summary>
@@ -62,42 +62,7 @@ namespace PenguinSteamerSecondSeason.Services
             Configuration = configuration;
             AppLifetime = appLifetime;
             TickerService = tickerService;
-
-            // DB確認して、データが無ければ初期データを入れる
-            InitializeDatabase();
         }
-
-        #region InitializeDatabaseAsync:DB確認して、データが無ければ初期データを入れる
-
-        /// <summary>
-        /// DB確認して、データが無ければ初期データを入れる
-        /// </summary>
-        /// <returns></returns>
-        private void InitializeDatabase()
-        {
-            if (DbContext.MWebSockets.ToList().Count == 0)
-            {
-                Logger.LogInformation("WebSocketデータがありません。初期値を登録します。");
-                var array = new List<string[]>();
-                var section = Configuration.GetSection("DefaultParameters");
-                section.Bind("MWebSocket", array);
-                foreach (var item in array)
-                {
-                    var data = new MWebSocket
-                    {
-                        Id = int.Parse(item[0]),
-                        Board = new MBoard { Id = int.Parse(item[1]) },
-                        Category = int.Parse(item[2]),
-                        EndPoint = item[3],
-                        ChannelName = item[4],
-                        IsEnabled = int.Parse(item[5]) == 1
-                    };
-                    DbContext.MWebSockets.Add(data);
-                }
-                DbContext.SaveChanges(SystemConstants.SystemName);
-            }
-        }
-        #endregion
 
         #endregion
 
@@ -126,7 +91,7 @@ namespace PenguinSteamerSecondSeason.Services
             var timeScales = DbContext.MTimeScales.OrderBy(d => d.SecondsValue).ToList();
 
             // 対象をDBから取得して、サービスに登録していく
-            var wss = DbContext.MWebSockets.Where(d => d.IsEnabled && !d.IsDeleted).ToList();
+            var wss = DbContext.MWebSockets.Include(x => x.MBoard).Where(d => d.IsEnabled && !d.IsDeleted).ToList();
 
             foreach (var item in wss)
             {
@@ -135,11 +100,10 @@ namespace PenguinSteamerSecondSeason.Services
                 if(item.Category == 1)
                 {
                     // Tickerの場合、Ticker管理サービスに登録して外からアクセスできるようにする
-                    TickerService.AddWebSocket(ws, item.Board, timeScales);
+                    TickerService.AddWebSocket(ws, item.MBoard, timeScales);
                 }
             }
         }
-        #endregion
 
         /// <summary>
         /// 扱うWebSocket追加
@@ -154,13 +118,24 @@ namespace PenguinSteamerSecondSeason.Services
             MyWebSockets.Add(myWebSocket);
             return myWebSocket;
         }
+        #endregion
 
+        #region 終了処理、特に何も行わない
+        /// <summary>
+        /// 終了処理
+        /// 特に何も行わない
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public Task StopAsync(CancellationToken cancellationToken)
         {
             Logger.LogInformation("IWebSocketService終了処理");
 
             return Task.CompletedTask;
         }
+        #endregion
+
+        #region メイン処理
         private void OnStarted()
         {
             Logger.LogInformation("IWebSocketServiceメインロジック開始");
@@ -185,6 +160,7 @@ namespace PenguinSteamerSecondSeason.Services
                 list.Add(item.RunAsync());
             }
         }
+        #endregion
     }
 
 }

@@ -98,6 +98,8 @@ namespace PenguinSteamerSecondSeason.Services
 
         /// <summary>
         /// Tickerを受信するWebSocketを追加する
+        /// 受信時のイベントを登録する
+        /// 後の処理はCandleMakerに任せる
         /// </summary>
         /// <param name="myWebSocket">Tickerを受信するWebSocket</param>
         /// <param name="board">MBoard</param>

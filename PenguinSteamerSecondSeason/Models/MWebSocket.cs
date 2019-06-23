@@ -18,7 +18,7 @@ namespace PenguinSteamerSecondSeason.Models
         /// <summary>
         /// どの取引所のどの通貨ペアか
         /// </summary>
-        public MBoard Board { get; set; }
+        public MBoard MBoard { get; set; }
         
         /// <summary>
         /// 種類：1:Ticker、2:板、3:約定…
