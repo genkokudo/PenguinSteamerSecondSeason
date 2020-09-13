@@ -1,0 +1,6 @@
+﻿■デプロイ時にすること
+・local.settings.json -> [Function App の構成]
+Azure にデプロイした後は、local.settings.jsonで ":" 区切りで登録したものを"__" 区切りで登録します。
+
+"UserSettings:Name": "GinGin"
+"UserSettings__Name": "GinGin"
