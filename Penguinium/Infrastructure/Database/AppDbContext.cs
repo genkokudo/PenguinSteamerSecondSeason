@@ -1,10 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using PenguinSteamerFunction.Entities;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using Penguinium.Entities;
 
-namespace PenguinSteamerFunction.Infrastructure.Database
+namespace Penguinium.Infrastructure.Database
 {
     public class AppDbContext : DbContext
     {

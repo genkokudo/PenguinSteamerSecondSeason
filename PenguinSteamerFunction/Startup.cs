@@ -2,8 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Penguinium.Infrastructure.Database;
 using PenguinSteamerFunction;
-using PenguinSteamerFunction.Infrastructure.Database;
 using System;
 
 [assembly: FunctionsStartup(typeof(Startup))]
