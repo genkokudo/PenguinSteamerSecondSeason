@@ -11,7 +11,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PenguinSteamerFunction", "P
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Penguinium", "Penguinium\Penguinium.csproj", "{DC426CB4-6527-4BAA-BC89-BD4437806A19}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PenguinMigration", "PenguinMigration\PenguinMigration.csproj", "{943CC544-4260-4B07-81B7-1425F827D95C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlizzardHaunt", "BlizzardHaunt\BlizzardHaunt.csproj", "{DEC97D01-5731-4C78-8A2C-FC079FE1683F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,10 +35,10 @@ Global
 		{DC426CB4-6527-4BAA-BC89-BD4437806A19}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DC426CB4-6527-4BAA-BC89-BD4437806A19}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DC426CB4-6527-4BAA-BC89-BD4437806A19}.Release|Any CPU.Build.0 = Release|Any CPU
-		{943CC544-4260-4B07-81B7-1425F827D95C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{943CC544-4260-4B07-81B7-1425F827D95C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{943CC544-4260-4B07-81B7-1425F827D95C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{943CC544-4260-4B07-81B7-1425F827D95C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DEC97D01-5731-4C78-8A2C-FC079FE1683F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DEC97D01-5731-4C78-8A2C-FC079FE1683F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DEC97D01-5731-4C78-8A2C-FC079FE1683F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DEC97D01-5731-4C78-8A2C-FC079FE1683F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

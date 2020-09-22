@@ -83,7 +83,7 @@ namespace PenguinSteamerSecondSeason
                     // AddJsonFileで存在しなくても良い場合はoptional = trueを指定
                     configuration = configApp
                         .AddJsonFile("appsettings.json")
-                        .AddJsonFile($"appsettings.{envName}.json")
+                        .AddJsonFile("appsettings.Production.json", true)
                         .AddEnvironmentVariables(prefix: SystemConstants.PrefixEnv)
                         .Build();
                 })
