@@ -2,7 +2,7 @@
 
 namespace Penguinium.Entities
 {
-    public class Test
+    public class TestEntity : EntityBase
     {
         public long Id { get; set; }
 

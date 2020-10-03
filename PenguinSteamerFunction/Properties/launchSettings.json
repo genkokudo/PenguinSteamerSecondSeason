@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "PenguinSteamerFunction": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "SQLCONNSTR_BH": "Data Source=(LocalDB)\\\\MSSQLLocalDB;Integrated Security=true;Database=PenguinSteamer;"
+      }
+    }
+  }
+}

@@ -5,7 +5,7 @@ namespace Penguinium.Infrastructure.Database
 {
     public class AppDbContext : DbContext
     {
-        public DbSet<Test> Tests { get; set; }
+        public DbSet<TestEntity> Tests { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
