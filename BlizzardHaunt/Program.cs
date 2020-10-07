@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using BlizzardHaunt.Infrastructure.Database;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Penguinium;
+using Penguinium.Infrastructure.Database;
 
 namespace BlizzardHaunt
 {
@@ -29,7 +29,7 @@ namespace BlizzardHaunt
                 try
                 {
                     // DBをマイグレーションする
-                    var context = services.GetRequiredService<ApplicationDbContext>();
+                    var context = services.GetRequiredService<AppDbContext>();
                     context.Database.Migrate();
                     // マスタデータの初期化が必要な場合、こういうクラスを作成する
                     //DbInitializer.Initialize(context);

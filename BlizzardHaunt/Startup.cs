@@ -10,7 +10,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using BlizzardHaunt.Data;
-using BlizzardHaunt.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Penguinium.Infrastructure.Database;
 
@@ -45,9 +44,10 @@ namespace BlizzardHaunt
         public void ConfigureServices(IServiceCollection services)
         {
             // 環境変数から接続文字列とパスワードを取得する。
-            var constr = Configuration.GetConnectionString("BH");
+            //var constr = Configuration.GetConnectionString("BH");
+            var constr = "Data Source=(LocalDB)\\MSSQLLocalDB;Integrated Security=true;Database=PenguinSteamer;";
             services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlServer(constr));   // SQLCONNSTR_BH
+            options.UseSqlServer(constr, b => b.MigrationsAssembly("BlizzardHaunt")));   // SQLCONNSTR_BH
             // Data Source=(LocalDB)\\MSSQLLocalDB;Integrated Security=true;Database=PenguinSteamer;
 
             services.AddRazorPages();
