@@ -10,7 +10,7 @@ using Penguinium.Infrastructure.Database;
 namespace BlizzardHaunt.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20201007000349_Initial")]
+    [Migration("20201029150217_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

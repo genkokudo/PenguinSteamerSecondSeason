@@ -31,8 +31,8 @@ namespace BlizzardHaunt
                     // DBをマイグレーションする
                     var context = services.GetRequiredService<AppDbContext>();
                     context.Database.Migrate();
-                    // マスタデータの初期化が必要な場合、こういうクラスを作成する
-                    //DbInitializer.Initialize(context);
+                    // 初期データの設定
+                    DbInitializer.Initialize(context);
                 }
                 catch (Exception ex)
                 {

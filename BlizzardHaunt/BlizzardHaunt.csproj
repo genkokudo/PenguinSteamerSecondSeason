@@ -19,4 +19,8 @@
     <ProjectReference Include="..\Penguinium\Penguinium.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Infrastructure\" />
+  </ItemGroup>
+
 </Project>

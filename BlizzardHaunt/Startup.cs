@@ -43,12 +43,13 @@ namespace BlizzardHaunt
 
         public void ConfigureServices(IServiceCollection services)
         {
-            // 環境変数から接続文字列とパスワードを取得する。
+            // 環境変数から接続文字列とパスワードを取得する。（TODO:本番系のみ）
             //var constr = Configuration.GetConnectionString("BH");
-            var constr = "Data Source=(LocalDB)\\MSSQLLocalDB;Integrated Security=true;Database=PenguinSteamer;";
+
+            // 設定ファイルから接続文字列とパスワードを取得する。（開発時のみ）
+            var constr = Configuration.GetValue<string>($"ConnectionStrings:DefaultConnection");
             services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(constr, b => b.MigrationsAssembly("BlizzardHaunt")));   // SQLCONNSTR_BH
-            // Data Source=(LocalDB)\\MSSQLLocalDB;Integrated Security=true;Database=PenguinSteamer;
 
             services.AddRazorPages();
             services.AddServerSideBlazor();
